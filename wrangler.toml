@@ -1,0 +1,21 @@
+name = "r2-file-share"
+main = "index.js"
+compatibility_date = "2024-03-01"
+
+# 允许直接在 index.js 中以文本形式导入 index.html 文件
+rules = [
+  { type = "Text", globs = ["**/*.html"] }
+]
+
+[vars]
+# 访问网页控制面板所需的密码
+AUTH_PASSWORD = "admin"
+# 用于生成和校验加密预签名链接的密钥盐（请在部署时修改为长随机字符串）
+SECRET_KEY = "default-salt-key-for-presigned-urls"
+# 允许请求的 Referer 匹配前缀。留空则表示不校验防盗链（推荐留空，需要时填入如 https://yourdomain.com）
+ALLOWED_REFERER = ""
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "my-share-files"
+

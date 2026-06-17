@@ -1,0 +1,13 @@
+{
+  "name": "cloudflare-storage-page",
+  "version": "1.0.0",
+  "description": "Cloudflare R2 File Share Hub",
+  "main": "index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3.57.0"
+  }
+}

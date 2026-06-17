@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AetherStorage - R2 极速文件分发面板</title>
+  <!-- 引入 Google Fonts 字体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at top left, #0f172a, #020617);
+      --panel-bg: rgba(30, 41, 59, 0.45);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-indigo: #6366f1;
+      --accent-purple: #a855f7;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+      --shadow-color: rgba(0, 0, 0, 0.5);
+      --font-outfit: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-primary);
+      font-family: var(--font-inter);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 背景虚化光晕效果 */
+    .bg-glow-1 {
+      position: absolute;
+      top: -10%;
+      left: -10%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 70%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .bg-glow-2 {
+      position: absolute;
+      bottom: -10%;
+      right: -10%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, rgba(168, 85, 247, 0) 70%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* 顶部导航 */
+    header {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(15, 23, 42, 0.6);
+      border-bottom: 1px solid var(--panel-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 1rem 2rem;
+    }
+
+    .header-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: var(--font-outfit);
+      font-size: 1.6rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      border: 1px solid var(--panel-border);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-emerald);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-emerald);
+      animation: pulse 2s infinite;
+    }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-secondary);
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      margin-left: 1rem;
+    }
+
+    .logout-btn:hover {
+      border-color: var(--accent-rose);
+      color: var(--text-primary);
+      background: rgba(244, 63, 94, 0.1);
+    }
+
+    /* 主布局 */
+    main {
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 2rem auto;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 968px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 通用玻璃面板 */
+    .glass-card {
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 32px 0 var(--shadow-color);
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    /* 拖拽上传区 */
+    .upload-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      position: sticky;
+      top: 90px;
+    }
+
+    .upload-zone {
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 3rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.01);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent-indigo);
+      background: rgba(99, 102, 241, 0.04);
+      transform: translateY(-2px);
+    }
+
+    .upload-zone svg {
+      width: 48px;
+      height: 48px;
+      stroke: var(--text-secondary);
+      margin-bottom: 1rem;
+      transition: stroke 0.3s, transform 0.3s;
+    }
+
+    .upload-zone:hover svg, .upload-zone.dragover svg {
+      stroke: var(--accent-indigo);
+      transform: translateY(-5px);
+    }
+
+    .upload-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .upload-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    /* 正在上传队列 */
+    .upload-progress-card {
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .progress-filename {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+
+    .progress-percent {
+      color: var(--accent-cyan);
+      font-weight: 600;
+      font-family: var(--font-outfit);
+    }
+
+    .progress-bar-container {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-indigo), var(--accent-purple));
+      border-radius: 10px;
+      transition: width 0.2s ease;
+      position: relative;
+    }
+
+    .progress-bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(
+        90deg,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,0.3) 50%,
+        rgba(255,255,255,0) 100%
+      );
+      animation: progress-shimmer 1.5s infinite;
+    }
+
+    .progress-stats {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* 按钮组 */
+    .btn {
+      background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
+      color: var(--text-primary);
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    .btn:hover {
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--panel-border);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: none;
+    }
+
+    /* 文件列表区 */
+    .list-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .list-title-group h2 {
+      font-family: var(--font-outfit);
+      font-size: 1.4rem;
+      font-weight: 600;
+      background: linear-gradient(to right, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .list-title-group p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .search-bar {
+      position: relative;
+      max-width: 300px;
+      width: 100%;
+    }
+
+    .search-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 0.5rem 1rem 0.5rem 2.2rem;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      transition: all 0.3s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent-indigo);
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      stroke: var(--text-secondary);
+      pointer-events: none;
+    }
+
+    /* 表格区域 */
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--panel-border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-secondary);
+      font-weight: 500;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--panel-border);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--panel-border);
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr {
+      transition: background-color 0.3s;
+    }
+
+    tr:hover td {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .file-name-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 500;
+      max-width: 320px;
+    }
+
+    .file-name-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .file-name-text:hover {
+      color: var(--accent-cyan);
+      text-decoration: underline;
+    }
+
+    .file-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      stroke: var(--accent-indigo);
+      fill: rgba(99, 102, 241, 0.1);
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .action-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+    }
+
+    .action-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .action-btn.download-btn:hover {
+      background: rgba(6, 182, 212, 0.15);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    .action-btn.share-btn:hover {
+      background: rgba(168, 85, 247, 0.15);
+      border-color: var(--accent-purple);
+      color: var(--accent-purple);
+    }
+
+    .action-btn.delete-btn:hover {
+      background: rgba(244, 63, 94, 0.15);
+      border-color: var(--accent-rose);
+      color: var(--accent-rose);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      stroke: rgba(255, 255, 255, 0.15);
+      margin-bottom: 1rem;
+    }
+
+    /* 鉴权遮罩层 */
+    .auth-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle at top left, #0f172a, #020617);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      transition: opacity 0.5s ease, visibility 0.5s;
+    }
+
+    .auth-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      text-align: center;
+    }
+
+    .auth-logo {
+      font-family: var(--font-outfit);
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .auth-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+
+    .auth-input-group {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .auth-input {
+      width: 100%;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 0.8rem 1.2rem;
+      color: #fff;
+      font-size: 1rem;
+      transition: all 0.3s;
+      text-align: center;
+      letter-spacing: 2px;
+    }
+
+    .auth-input:focus {
+      outline: none;
+      border-color: var(--accent-indigo);
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+    }
+
+    /* 提示消息 Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      z-index: 200;
+    }
+
+    .toast {
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--panel-border);
+      color: var(--text-primary);
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      transform: translateY(50px);
+      opacity: 0;
+      animation: toast-in 0.3s forwards;
+    }
+
+    .toast.success { border-left: 3px solid var(--accent-emerald); }
+    .toast.error { border-left: 3px solid var(--accent-rose); }
+    .toast.info { border-left: 3px solid var(--accent-cyan); }
+
+    /* 摇晃动画 */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    .shake {
+      animation: shake 0.4s ease;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.6; }
+    }
+
+    @keyframes progress-shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    @keyframes toast-in {
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* 页脚 */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      margin-top: auto;
+    }
+
+    /* 确认对话框 */
+    .confirm-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 150;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .confirm-modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .confirm-modal {
+      background: #1e293b;
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 1.8rem;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .confirm-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .confirm-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      line-height: 1.4;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+
+  <!-- 鉴权卡片 -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div id="auth-card" class="auth-card">
+      <div class="auth-logo">AetherStorage</div>
+      <div class="auth-subtitle">R2 极速文件分发平台</div>
+      <div class="auth-input-group">
+        <input type="password" id="auth-password" class="auth-input" placeholder="请输入密码访问" onkeydown="if(event.key==='Enter') attemptAuth()">
+      </div>
+      <button class="btn" onclick="attemptAuth()">
+        <svg style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M10 14h4v-4H10v4zm0-6V4a4 4 0 0 1 8 0v4H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2zm-6 2h12v10H4V10z"/></svg>
+        验证并进入
+      </button>
+    </div>
+  </div>
+
+  <!-- 顶部导航 -->
+  <header>
+    <div class="header-container">
+      <a href="#" class="logo">
+        <svg style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-8-4-4-4 4m4-4v12"/></svg>
+        AetherStorage
+      </a>
+      <div style="display:flex; align-items:center;">
+        <div class="system-status">
+          <div class="status-dot"></div>
+          <span>Cloudflare R2 连接正常</span>
+        </div>
+        <button class="logout-btn" onclick="logout()">登出</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主界面 -->
+  <main>
+    <!-- 左侧上传区域 -->
+    <div class="upload-container">
+      <div class="glass-card">
+        <div style="font-family: var(--font-outfit); font-size:1.15rem; font-weight:600; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem">
+          <svg style="width:20px;height:20px;stroke:var(--accent-indigo);fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          上传控制台
+        </div>
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5">
+            <path d="M12 16V8M9 11l3-3 3 3M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="upload-title">将文件拖放到此处</div>
+          <div class="upload-subtitle">或者点击选择本地文件</div>
+          <div class="upload-subtitle" style="font-size:0.75rem; margin-top:0.5rem; color:var(--text-secondary)">支持分片上传，支持大文件</div>
+          <input type="file" id="file-input" onchange="handleFileSelect(event)">
+        </div>
+
+        <!-- 进度条面板 -->
+        <div class="upload-progress-card" id="upload-progress-card">
+          <div class="progress-header">
+            <div class="progress-filename" id="progress-filename">-</div>
+            <div class="progress-percent" id="progress-percent">0%</div>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+          </div>
+          <div class="progress-stats">
+            <span id="progress-status">准备上传...</span>
+            <span id="progress-speed">-</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 说明书 -->
+      <div class="glass-card" style="font-size:0.8rem; line-height:1.6; color:var(--text-secondary)">
+        <h3 style="font-family: var(--font-outfit); color:var(--text-primary); font-size:0.9rem; font-weight:600; margin-bottom:0.5rem">系统特性说明：</h3>
+        <p>⚡️ <b>无下行流量费</b>：基于 R2 原生设计，下载免带宽出站流量费。</p>
+        <p>🔒 <b>时效安全链</b>：预签名分享链接自带加密鉴权，仅在 10 分钟内有效，过期失效。</p>
+        <p>🛡️ <b>防盗链保护</b>：非签名直接引用会启动 Referer 检测阻断盗链。</p>
+        <p>📦 <b>大文件分片</b>：采用 5MB 块大小多任务分片直传，应对网络不稳与 Worker 超时。</p>
+      </div>
+    </div>
+
+    <!-- 右侧列表区域 -->
+    <div class="list-container">
+      <div class="glass-card">
+        <div class="list-header">
+          <div class="list-title-group">
+            <h2>所有存储文件</h2>
+            <p id="file-count-text">正在加载文件列表...</p>
+          </div>
+          <div class="search-bar">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" class="search-input" id="search-input" placeholder="搜索文件名称..." oninput="renderTable()">
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>文件名</th>
+                  <th>大小</th>
+                  <th>修改时间</th>
+                  <th style="text-align: right;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="file-list-body">
+                <!-- 动态填充 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 页脚 -->
+  <footer>
+    <p>&copy; 2026 AetherStorage. Powered by Cloudflare Workers & R2.</p>
+  </footer>
+
+  <!-- 确认删除对话框 -->
+  <div class="confirm-modal-overlay" id="confirm-modal-overlay">
+    <div class="confirm-modal">
+      <div class="confirm-title" id="confirm-title">确认删除此文件？</div>
+      <div class="confirm-desc">此操作将从 Cloudflare R2 存储桶中永久抹除该文件，无法恢复。</div>
+      <div class="confirm-actions">
+        <button class="btn btn-secondary" onclick="closeConfirmModal()">取消</button>
+        <button class="btn" style="background:linear-gradient(135deg, var(--accent-rose), #e11d48); box-shadow:none" id="confirm-delete-btn">确认删除</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script>
+    const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB 块大小
+    let allFiles = [];
+    let fileToDelete = null;
+
+    // Toast 提示
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      let icon = '';
+      if (type === 'success') icon = '<svg style="width:16px;height:16px;stroke:var(--accent-emerald);fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>';
+      else if (type === 'error') icon = '<svg style="width:16px;height:16px;stroke:var(--accent-rose);fill:none;stroke-width:2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6m0-6 6 6"/></svg>';
+      else icon = '<svg style="width:16px;height:16px;stroke:var(--accent-cyan);fill:none;stroke-width:2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>';
+
+      toast.innerHTML = `${icon}<span>${message}</span>`;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'toast-in 0.3s reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // 格式化文件大小
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // 格式化时间
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const d = new Date(dateStr);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+
+    // 鉴权检测
+    function checkAuth() {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        document.getElementById('auth-overlay').classList.add('hidden');
+        loadFiles();
+      } else {
+        document.getElementById('auth-overlay').classList.remove('hidden');
+      }
+    }
+
+    async function attemptAuth() {
+      const password = document.getElementById('auth-password').value;
+      if (!password) {
+        showToast('请输入密码', 'error');
+        shakeAuthCard();
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          localStorage.setItem('auth_token', password); // 直接保存密码作为验证，符合简单系统的设计
+          document.getElementById('auth-overlay').classList.add('hidden');
+          showToast('验证成功', 'success');
+          loadFiles();
+        } else {
+          showToast('密码错误', 'error');
+          shakeAuthCard();
+        }
+      } catch (err) {
+        showToast('请求出错: ' + err.message, 'error');
+        shakeAuthCard();
+      }
+    }
+
+    function shakeAuthCard() {
+      const card = document.getElementById('auth-card');
+      card.classList.add('shake');
+      setTimeout(() => card.classList.remove('shake'), 400);
+    }
+
+    function logout() {
+      localStorage.removeItem('auth_token');
+      location.reload();
+    }
+
+    // 凭证注入辅助
+    function getHeaders() {
+      return {
+        'Authorization': localStorage.getItem('auth_token') || ''
+      };
+    }
+
+    // 加载文件列表
+    async function loadFiles() {
+      try {
+        const res = await fetch('/api/list', {
+          headers: getHeaders()
+        });
+
+        if (res.status === 401) {
+          logout();
+          return;
+        }
+
+        if (res.ok) {
+          const data = await res.json();
+          allFiles = data.files || [];
+          renderTable();
+        } else {
+          showToast('获取文件列表失败', 'error');
+        }
+      } catch (err) {
+        showToast('网络请求异常: ' + err.message, 'error');
+      }
+    }
+
+    // 渲染表格
+    function renderTable() {
+      const tbody = document.getElementById('file-list-body');
+      const search = document.getElementById('search-input').value.toLowerCase().trim();
+      
+      const filtered = allFiles.filter(f => f.key.toLowerCase().includes(search));
+      
+      document.getElementById('file-count-text').innerText = `共 ${filtered.length} 个文件`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4">
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/>
+                  <path d="M16 8h.01M5 15h9"/>
+                </svg>
+                <div style="font-size: 0.95rem; font-weight: 500;">没有找到任何文件</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">请在左侧区域上传新文件</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(f => {
+        return `
+          <tr>
+            <td>
+              <div class="file-name-cell">
+                <svg class="file-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z" />
+                </svg>
+                <span class="file-name-text" onclick="downloadFile('${encodeURIComponent(f.key)}')" title="${f.key}">${f.key}</span>
+              </div>
+            </td>
+            <td style="font-family:var(--font-outfit); color:var(--text-secondary)">${formatBytes(f.size)}</td>
+            <td style="color:var(--text-secondary)">${formatDate(f.uploaded)}</td>
+            <td>
+              <div class="actions-cell">
+                <button class="action-btn download-btn" onclick="downloadFile('${encodeURIComponent(f.key)}')" title="极速下载">
+                  <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                </button>
+                <button class="action-btn share-btn" onclick="shareFile('${encodeURIComponent(f.key)}')" title="获取10分钟签名分享链接">
+                  <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+                </button>
+                <button class="action-btn delete-btn" onclick="confirmDelete('${encodeURIComponent(f.key)}')" title="永久删除">
+                  <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // 分享链接获取与复制
+    async function shareFile(key) {
+      try {
+        const res = await fetch(`/api/share?key=${key}`, {
+          headers: getHeaders()
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const shareUrl = data.url;
+          navigator.clipboard.writeText(shareUrl).then(() => {
+            showToast('加密预签名分享链接已复制至剪贴板（10分钟有效）', 'success');
+          }).catch(err => {
+            showToast('复制链接失败，请手动选择复制: ' + shareUrl, 'error');
+          });
+        } else {
+          showToast('生成分享链接失败', 'error');
+        }
+      } catch (err) {
+        showToast('请求异常: ' + err.message, 'error');
+      }
+    }
+
+    // 触发下载
+    function downloadFile(key) {
+      // 通过 API 加密码直接在新窗口或隐藏 iframe 触发流下载
+      const url = `${window.location.origin}/api/download?key=${key}&token=${localStorage.getItem('auth_token')}`;
+      window.open(url, '_blank');
+    }
+
+    // 删除确认与处理
+    function confirmDelete(key) {
+      fileToDelete = key;
+      document.getElementById('confirm-modal-overlay').classList.add('active');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirm-modal-overlay').classList.remove('active');
+      fileToDelete = null;
+    }
+
+    document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+      if (!fileToDelete) return;
+      try {
+        const res = await fetch(`/api/delete?key=${fileToDelete}`, {
+          method: 'DELETE',
+          headers: getHeaders()
+        });
+
+        if (res.ok) {
+          showToast('文件已彻底删除', 'success');
+          loadFiles();
+        } else {
+          showToast('删除失败', 'error');
+        }
+      } catch (err) {
+        showToast('删除请求异常: ' + err.message, 'error');
+      } finally {
+        closeConfirmModal();
+      }
+    });
+
+    // 文件拖拽与选择上传
+    const uploadZone = document.getElementById('upload-zone');
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+      uploadZone.addEventListener(eventName, e => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      uploadZone.addEventListener(eventName, e => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+      }, false);
+    });
+
+    uploadZone.addEventListener('drop', e => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0) {
+        uploadFile(files[0]);
+      }
+    });
+
+    function handleFileSelect(e) {
+      const files = e.target.files;
+      if (files.length > 0) {
+        uploadFile(files[0]);
+      }
+    }
+
+    // 核心分片上传算法
+    async function uploadFile(file) {
+      const progressCard = document.getElementById('upload-progress-card');
+      const filenameLabel = document.getElementById('progress-filename');
+      const percentLabel = document.getElementById('progress-percent');
+      const fillBar = document.getElementById('progress-bar-fill');
+      const statusLabel = document.getElementById('progress-status');
+      const speedLabel = document.getElementById('progress-speed');
+
+      progressCard.style.display = 'block';
+      filenameLabel.innerText = file.name;
+      percentLabel.innerText = '0%';
+      fillBar.style.width = '0%';
+      statusLabel.innerText = '正在初始化上传...';
+      speedLabel.innerText = '';
+
+      let uploadId = '';
+      let key = '';
+
+      try {
+        // 1. 初始化分片上传
+        const initRes = await fetch('/api/upload-init', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getHeaders()
+          },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type || 'application/octet-stream'
+          })
+        });
+
+        if (!initRes.ok) {
+          throw new Error('分片上传初始化失败，状态码: ' + initRes.status);
+        }
+
+        const initData = await initRes.json();
+        uploadId = initData.uploadId;
+        key = initData.key;
+
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+        const uploadedParts = [];
+        const startTime = Date.now();
+
+        statusLabel.innerText = `准备上传分片... 共 ${totalChunks} 片`;
+
+        // 2. 循环上传分片
+        for (let i = 0; i < totalChunks; i++) {
+          const start = i * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, file.size);
+          const chunk = file.slice(start, end);
+          const partNumber = i + 1;
+
+          statusLabel.innerText = `正在上传第 ${partNumber}/${totalChunks} 分片...`;
+
+          let success = false;
+          let retryCount = 0;
+          let etag = '';
+
+          // 分片容错重试机制
+          while (!success && retryCount < 3) {
+            try {
+              const partRes = await fetch(`/api/upload-part?key=${encodeURIComponent(key)}&uploadId=${uploadId}&partNumber=${partNumber}`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: chunk
+              });
+
+              if (partRes.ok) {
+                const partData = await partRes.json();
+                etag = partData.etag;
+                success = true;
+              } else {
+                retryCount++;
+                statusLabel.innerText = `分片 ${partNumber} 失败，重试中 (${retryCount}/3)...`;
+                await new Promise(r => setTimeout(r, 1000));
+              }
+            } catch (err) {
+              retryCount++;
+              statusLabel.innerText = `分片 ${partNumber} 异常，重试中 (${retryCount}/3)...`;
+              await new Promise(r => setTimeout(r, 1000));
+            }
+          }
+
+          if (!success) {
+            throw new Error(`分片 ${partNumber} 上传失败，已达到重试上限`);
+          }
+
+          uploadedParts.push({
+            partNumber: partNumber,
+            etag: etag
+          });
+
+          // 更新进度条
+          const uploadedBytes = end;
+          const percent = Math.round((uploadedBytes / file.size) * 100);
+          percentLabel.innerText = `${percent}%`;
+          fillBar.style.width = `${percent}%`;
+
+          // 计算速度
+          const elapsed = (Date.now() - startTime) / 1000;
+          const speed = uploadedBytes / elapsed;
+          speedLabel.innerText = `${formatBytes(speed)}/s`;
+        }
+
+        // 3. 完成上传
+        statusLabel.innerText = '正在合并分片...';
+        const completeRes = await fetch(`/api/upload-complete?key=${encodeURIComponent(key)}&uploadId=${uploadId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getHeaders()
+          },
+          body: JSON.stringify({
+            parts: uploadedParts
+          })
+        });
+
+        if (completeRes.ok) {
+          statusLabel.innerText = '上传完成！';
+          showToast('文件上传成功', 'success');
+          setTimeout(() => {
+            progressCard.style.display = 'none';
+          }, 2000);
+          loadFiles();
+        } else {
+          throw new Error('分片合并失败');
+        }
+
+      } catch (err) {
+        showToast('上传失败: ' + err.message, 'error');
+        statusLabel.innerText = '上传出错';
+        console.error(err);
+      }
+    }
+
+    // 初始化运行
+    window.onload = checkAuth;
+  </script>
+</body>
+</html>
