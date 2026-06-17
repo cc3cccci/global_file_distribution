@@ -107,10 +107,74 @@ export default {
         }));
       }
 
+      // 路由：永久公开共享链接流式下载 (免鉴权，适用于软路由等外部设备)
+      if (pathname.startsWith('/f/')) {
+        const key = decodeURIComponent(pathname.substring(3));
+        if (!key) {
+          return new Response('Missing filename', { status: 400 });
+        }
+        
+        // 校验该文件是否已被公开分享
+        const publicFiles = await getPublicFiles(env);
+        if (!publicFiles.includes(key)) {
+          return new Response('Forbidden: This file is not public', { status: 403 });
+        }
+        
+        // 从 R2 获取文件
+        const object = await env.BUCKET.get(key);
+        if (!object) {
+          return new Response('File Not Found', { status: 404 });
+        }
+        
+        const headers = new Headers();
+        headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream');
+        headers.set('Content-Length', object.size.toString());
+        headers.set('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(key)}`);
+        if (object.httpEtag) {
+          headers.set('ETag', object.httpEtag);
+        }
+        // 设置不缓存，确保每次拉取都从 R2 实时获取最新版本
+        headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        
+        return new Response(object.body, {
+          headers
+        });
+      }
+
       // 除下载接口外，其他 API 都必须使用 Authorization 头校验登录状态
       if (!verifyAdminAuth(request, env)) {
         return corsResponse(new Response(JSON.stringify({ error: 'Unauthorized' }), {
           status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      // 路由：获取公开分享文件列表
+      if (pathname === '/api/public-list' && request.method === 'GET') {
+        const list = await getPublicFiles(env);
+        return corsResponse(new Response(JSON.stringify({ publicFiles: list }), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      // 路由：切换公开分享状态
+      if (pathname === '/api/public-toggle' && request.method === 'POST') {
+        const { key, isPublic } = await request.json();
+        if (!key) {
+          return corsResponse(new Response('Missing file key', { status: 400 }));
+        }
+        
+        let list = await getPublicFiles(env);
+        if (isPublic) {
+          if (!list.includes(key)) {
+            list.push(key);
+          }
+        } else {
+          list = list.filter(item => item !== key);
+        }
+        
+        await savePublicFiles(env, list);
+        return corsResponse(new Response(JSON.stringify({ success: true, publicFiles: list }), {
           headers: { 'Content-Type': 'application/json' }
         }));
       }
@@ -298,9 +362,24 @@ export default {
   }
 };
 
-// ==========================================
-// 辅助函数定义
-// ==========================================
+// 获取公开文件列表
+async function getPublicFiles(env) {
+  try {
+    const object = await env.BUCKET.get('.config/public_files.json');
+    if (!object) return [];
+    return await object.json();
+  } catch (e) {
+    console.error('Failed to get public files:', e.message);
+    return [];
+  }
+}
+
+// 保存公开文件列表
+async function savePublicFiles(env, list) {
+  await env.BUCKET.put('.config/public_files.json', JSON.stringify(list), {
+    httpMetadata: { contentType: 'application/json' }
+  });
+}
 
 // 后端鉴权校验
 function verifyAdminAuth(request, env) {

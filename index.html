@@ -607,6 +607,18 @@
       color: var(--accent-gold-light);
     }
 
+    .action-btn.public-btn:hover {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    .action-btn.public-btn.active {
+      background: rgba(212, 175, 55, 0.15);
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
+    }
+
     .action-btn.delete-btn:hover {
       background: rgba(244, 63, 94, 0.12);
       border-color: var(--accent-rose);
@@ -984,12 +996,29 @@
     </div>
   </div>
 
+  <!-- 公开链接管理弹窗 -->
+  <div class="confirm-modal-overlay" id="public-modal-overlay">
+    <div class="confirm-modal">
+      <div class="confirm-title" id="public-modal-title">公开链接管理</div>
+      <div style="margin: 1rem 0; text-align: left;">
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.5rem;">永久公开链接（适用于软路由、wget、curl 等免密直接拉取）：</p>
+        <input type="text" id="public-link-input" class="search-input" readonly style="max-width:100%; padding-left:0.75rem; font-size:0.8rem; height:34px; margin-bottom:1rem; background: rgba(0,0,0,0.15);" onclick="this.select()" title="点击全选链接">
+      </div>
+      <div class="confirm-actions" style="justify-content: flex-end;">
+        <button class="btn btn-secondary" onclick="closePublicModal()">关闭</button>
+        <button class="btn" id="public-action-btn" onclick="togglePublicStatus()">开启公开</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-container" id="toast-container"></div>
 
   <script>
     const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB 块大小
     let allFiles = [];
+    let publicFiles = [];
     let fileToDelete = null;
+    let activePublicFileKey = null;
 
     // Toast 提示
     function showToast(message, type = 'info') {
@@ -1089,24 +1118,27 @@
       };
     }
 
-    // 加载文件列表
+    // 加载文件列表与公开列表
     async function loadFiles() {
       try {
-        const res = await fetch('/api/list', {
-          headers: getHeaders()
-        });
+        const [filesRes, publicRes] = await Promise.all([
+          fetch('/api/list', { headers: getHeaders() }),
+          fetch('/api/public-list', { headers: getHeaders() })
+        ]);
 
-        if (res.status === 401) {
+        if (filesRes.status === 401 || publicRes.status === 401) {
           logout();
           return;
         }
 
-        if (res.ok) {
-          const data = await res.json();
-          allFiles = data.files || [];
+        if (filesRes.ok && publicRes.ok) {
+          const filesData = await filesRes.json();
+          const publicData = await publicRes.json();
+          allFiles = filesData.files || [];
+          publicFiles = publicData.publicFiles || [];
           renderTable();
         } else {
-          showToast('获取文件列表失败', 'error');
+          showToast('获取文件数据失败', 'error');
         }
       } catch (err) {
         showToast('网络请求异常: ' + err.message, 'error');
@@ -1161,6 +1193,9 @@
                 <button class="action-btn share-btn" onclick="shareFile('${encodeURIComponent(f.key)}')" title="获取10分钟签名分享链接">
                   <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
                 </button>
+                <button class="action-btn public-btn ${publicFiles.includes(f.key) ? 'active' : ''}" onclick="openPublicModal('${encodeURIComponent(f.key)}')" title="永久公开链接">
+                  <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"/></svg>
+                </button>
                 <button class="action-btn delete-btn" onclick="confirmDelete('${encodeURIComponent(f.key)}')" title="永久删除">
                   <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
                 </button>
@@ -1191,6 +1226,99 @@
         }
       } catch (err) {
         showToast('请求异常: ' + err.message, 'error');
+      }
+    }
+
+    // 打开公开链接弹窗
+    function openPublicModal(keyParam) {
+      const key = decodeURIComponent(keyParam);
+      activePublicFileKey = key;
+      
+      const isPublic = publicFiles.includes(key);
+      const modal = document.getElementById('public-modal-overlay');
+      const title = document.getElementById('public-modal-title');
+      const input = document.getElementById('public-link-input');
+      const actionBtn = document.getElementById('public-action-btn');
+      
+      title.innerText = `公开分享: ${key}`;
+      
+      if (isPublic) {
+        input.value = `${window.location.origin}/f/${key}`;
+        actionBtn.innerText = '取消公开';
+        actionBtn.style.background = 'linear-gradient(135deg, var(--accent-rose), #e11d48)';
+      } else {
+        input.value = '公开链接已关闭';
+        actionBtn.innerText = '开启公开';
+        actionBtn.style.background = 'linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark))';
+      }
+      
+      modal.classList.add('active');
+    }
+
+    // 关闭公开链接弹窗
+    function closePublicModal() {
+      document.getElementById('public-modal-overlay').classList.remove('active');
+      activePublicFileKey = null;
+    }
+
+    // 切换公开状态
+    async function togglePublicStatus() {
+      if (!activePublicFileKey) return;
+      
+      const key = activePublicFileKey;
+      const isCurrentlyPublic = publicFiles.includes(key);
+      const nextPublicState = !isCurrentlyPublic;
+      
+      const actionBtn = document.getElementById('public-action-btn');
+      const originalText = actionBtn.innerText;
+      actionBtn.disabled = true;
+      actionBtn.innerText = '处理中...';
+      
+      try {
+        const res = await fetch('/api/public-toggle', {
+          method: 'POST',
+          headers: {
+            ...getHeaders(),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            key: key,
+            isPublic: nextPublicState
+          })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          publicFiles = data.publicFiles || [];
+          
+          const input = document.getElementById('public-link-input');
+          if (nextPublicState) {
+            const publicUrl = `${window.location.origin}/f/${key}`;
+            input.value = publicUrl;
+            actionBtn.innerText = '取消公开';
+            actionBtn.style.background = 'linear-gradient(135deg, var(--accent-rose), #e11d48)';
+            
+            // 开启公开时，自动复制链接到剪贴板
+            navigator.clipboard.writeText(publicUrl).then(() => {
+              showToast('公开链接已开启并复制到剪贴板', 'success');
+            }).catch(() => {
+              showToast('公开链接已开启，请手动复制', 'success');
+            });
+          } else {
+            input.value = '公开链接已关闭';
+            actionBtn.innerText = '开启公开';
+            actionBtn.style.background = 'linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark))';
+            showToast('已取消此文件的公开状态', 'success');
+          }
+          
+          renderTable(); // 重新渲染列表以更新地球按钮状态
+        } else {
+          showToast('切换公开状态失败', 'error');
+        }
+      } catch (err) {
+        showToast('请求异常: ' + err.message, 'error');
+      } finally {
+        actionBtn.disabled = false;
       }
     }
 
