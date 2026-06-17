@@ -8,6 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      if (savedTheme === 'light') {
+        document.documentElement.classList.add('theme-light');
+      }
+    })();
+  </script>
   <style>
     :root {
       --bg-gradient: radial-gradient(circle at top left, #12100e, #050403);
@@ -23,6 +31,19 @@
       --shadow-color: rgba(0, 0, 0, 0.65);
       --font-outfit: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+      /* 头部与弹窗组件颜色变量 */
+      --header-bg: rgba(18, 16, 14, 0.75);
+      --system-status-bg: rgba(255, 255, 255, 0.03);
+      --btn-border: rgba(255, 255, 255, 0.12);
+      --auth-overlay-bg: radial-gradient(circle at top left, #12100e, #050403);
+      --auth-card-bg: rgba(28, 25, 21, 0.75);
+      --auth-input-bg: rgba(0, 0, 0, 0.3);
+      --auth-input-text: #ffffff;
+      --modal-bg: #1c1814;
+      --modal-shadow: rgba(0, 0, 0, 0.55);
+      --toast-bg: rgba(18, 16, 14, 0.9);
+      --title-gradient: linear-gradient(to right, #ffffff, #e2e8f0);
     }
 
     :root.theme-light {
@@ -37,6 +58,19 @@
       --accent-emerald: #10b981;
       --accent-rose: #ef4444;
       --shadow-color: rgba(142, 106, 12, 0.08);
+
+      /* 明亮主题下的组件配色重写 */
+      --header-bg: rgba(247, 246, 242, 0.85);
+      --system-status-bg: rgba(0, 0, 0, 0.03);
+      --btn-border: rgba(0, 0, 0, 0.12);
+      --auth-overlay-bg: linear-gradient(135deg, #f7f6f2 0%, #ebe7de 100%);
+      --auth-card-bg: rgba(255, 255, 255, 0.85);
+      --auth-input-bg: rgba(0, 0, 0, 0.04);
+      --auth-input-text: #25201a;
+      --modal-bg: #ffffff;
+      --modal-shadow: rgba(142, 106, 12, 0.12);
+      --toast-bg: rgba(255, 255, 255, 0.95);
+      --title-gradient: linear-gradient(to right, var(--text-primary), var(--accent-gold-dark));
     }
 
     * {
@@ -82,12 +116,13 @@
     header {
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      background: rgba(18, 16, 14, 0.75);
+      background: var(--header-bg);
       border-bottom: 1px solid var(--panel-border);
       position: sticky;
       top: 0;
       z-index: 10;
       padding: 1rem 2rem;
+      transition: background-color 0.3s, border-color 0.3s;
     }
 
     .header-container {
@@ -118,10 +153,11 @@
       gap: 0.5rem;
       font-size: 0.85rem;
       color: var(--text-secondary);
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--system-status-bg);
       padding: 0.4rem 0.8rem;
       border-radius: 20px;
       border: 1px solid var(--panel-border);
+      transition: background-color 0.3s, border-color 0.3s;
     }
 
     .status-dot {
@@ -135,7 +171,7 @@
 
     .logout-btn {
       background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid var(--btn-border);
       color: var(--text-secondary);
       padding: 0.4rem 1rem;
       border-radius: 8px;
@@ -409,7 +445,7 @@
       font-family: var(--font-outfit);
       font-size: 1.4rem;
       font-weight: 600;
-      background: linear-gradient(to right, #ffffff, #e2e8f0);
+      background: var(--title-gradient);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -594,13 +630,13 @@
     .auth-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: radial-gradient(circle at top left, #12100e, #050403);
+      background: var(--auth-overlay-bg);
       z-index: 100;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 1rem;
-      transition: opacity 0.5s ease, visibility 0.5s;
+      transition: opacity 0.5s ease, visibility 0.5s, background-color 0.3s;
     }
 
     .auth-overlay.hidden {
@@ -612,13 +648,14 @@
     .auth-card {
       width: 100%;
       max-width: 400px;
-      background: rgba(28, 25, 21, 0.7);
+      background: var(--auth-card-bg);
       backdrop-filter: blur(20px);
       border: 1px solid var(--panel-border);
       border-radius: 16px;
       padding: 2.5rem 2rem;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.65);
+      box-shadow: 0 10px 40px var(--modal-shadow);
       text-align: center;
+      transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
     }
 
     .auth-logo {
@@ -644,11 +681,11 @@
 
     .auth-input {
       width: 100%;
-      background: rgba(0,0,0,0.3);
+      background: var(--auth-input-bg);
       border: 1px solid var(--panel-border);
       border-radius: 8px;
       padding: 0.8rem 1.2rem;
-      color: #fff;
+      color: var(--auth-input-text);
       font-size: 1rem;
       transition: all 0.3s;
       text-align: center;
@@ -673,16 +710,17 @@
     }
 
     .toast {
-      background: rgba(18, 16, 14, 0.9);
+      background: var(--toast-bg);
       backdrop-filter: blur(8px);
       border: 1px solid var(--panel-border);
       color: var(--text-primary);
       padding: 0.8rem 1.5rem;
       border-radius: 8px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+      box-shadow: 0 5px 15px var(--modal-shadow);
       display: flex;
       align-items: center;
       gap: 0.75rem;
+      transition: background-color 0.3s, border-color 0.3s, color 0.3s, box-shadow 0.3s;
       font-size: 0.9rem;
       transform: translateY(50px);
       opacity: 0;
@@ -749,13 +787,15 @@
     }
 
     .confirm-modal {
-      background: #1c1814;
+      background: var(--modal-bg);
       border: 1px solid var(--panel-border);
       border-radius: 12px;
       padding: 1.8rem;
       max-width: 400px;
       width: 100%;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 30px var(--modal-shadow);
+      color: var(--text-primary);
+      transition: background-color 0.3s, border-color 0.3s, color 0.3s, box-shadow 0.3s;
     }
 
     .confirm-title {
