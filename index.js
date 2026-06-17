@@ -278,7 +278,8 @@ export default {
 
       // 路由：立即执行同步
       if (pathname === '/api/sync-now' && request.method === 'POST') {
-        const results = await performGithubSync(env);
+        const singleKey = url.searchParams.get('key');
+        const results = await performGithubSync(env, singleKey);
         return corsResponse(new Response(JSON.stringify({ success: true, results }), {
           headers: { 'Content-Type': 'application/json' }
         }));
@@ -370,7 +371,7 @@ async function verifySignature(key, expires, signature, secret) {
 }
 
 // 执行 GitHub 自动同步拉取逻辑
-async function performGithubSync(env) {
+async function performGithubSync(env, singleKey = null) {
   let syncList = [];
   try {
     const configObject = await env.BUCKET.get('.config/sync_list.json');
@@ -390,6 +391,14 @@ async function performGithubSync(env) {
   } catch (e) {
     console.error('Failed to load sync list config:', e.message);
     return [{ error: 'Failed to load config: ' + e.message }];
+  }
+
+  // 如果指定了单个 key，则只过滤出该 key 进行同步
+  if (singleKey) {
+    syncList = syncList.filter(item => item.key === singleKey);
+    if (syncList.length === 0) {
+      return [{ key: singleKey, status: 'failed', error: 'Subscription key not found' }];
+    }
   }
 
   const results = [];

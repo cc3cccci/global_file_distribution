@@ -25,6 +25,20 @@
       --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
+    :root.theme-light {
+      --bg-gradient: linear-gradient(135deg, #f7f6f2 0%, #ebe7de 100%);
+      --panel-bg: rgba(255, 255, 255, 0.7);
+      --panel-border: rgba(212, 175, 55, 0.25);
+      --text-primary: #25201a;
+      --text-secondary: #7c7263;
+      --accent-gold-light: #fbecc2;
+      --accent-gold: #c5971a;
+      --accent-gold-dark: #8e6a0c;
+      --accent-emerald: #10b981;
+      --accent-rose: #ef4444;
+      --shadow-color: rgba(142, 106, 12, 0.08);
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -152,6 +166,60 @@
     @media (max-width: 968px) {
       main {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      header {
+        padding: 0.75rem 1rem;
+      }
+      .header-container {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: center;
+        text-align: center;
+      }
+      .logout-btn {
+        margin-left: 0.5rem;
+        padding: 0.3rem 0.75rem;
+        font-size: 0.8rem;
+      }
+      .system-status {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+      }
+      main {
+        margin: 1rem auto;
+        padding: 0 0.75rem;
+        gap: 1.25rem;
+      }
+      .glass-card {
+        padding: 1.25rem 1rem;
+      }
+      .list-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+      }
+      .search-bar {
+        max-width: 100%;
+      }
+      .table-wrapper {
+        border: none;
+      }
+      table {
+        min-width: 550px;
+      }
+      .auth-card {
+        padding: 2rem 1.25rem;
+      }
+      .auth-logo {
+        font-size: 1.7rem;
+      }
+      .toast-container {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
       }
     }
 
@@ -736,12 +804,15 @@
         <svg style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1m-4-8-4-4-4 4m4-4v12"/></svg>
         AetherStorage
       </a>
-      <div style="display:flex; align-items:center;">
+      <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; justify-content:center;">
         <div class="system-status">
           <div class="status-dot"></div>
           <span>Cloudflare R2 连接正常</span>
         </div>
-        <button class="logout-btn" onclick="logout()">登出</button>
+        <button id="theme-toggle-btn" class="logout-btn" onclick="toggleTheme()" style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; padding:0; border-radius:50%; margin:0;" title="切换明暗主题">
+          <svg id="theme-icon" style="width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2" viewBox="0 0 24 24"></svg>
+        </button>
+        <button class="logout-btn" onclick="logout()" style="margin:0;">登出</button>
       </div>
     </div>
   </header>
@@ -1320,16 +1391,58 @@
       container.innerHTML = currentSyncList.map((item, index) => {
         return `
           <div style="background:rgba(255,255,255,0.02); border:1px solid var(--panel-border); padding:0.5rem 0.75rem; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-            <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;" title="${item.url}">
+            <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;" title="${item.url}">
               <div style="font-weight:600; color:var(--text-primary); font-size:0.85rem;">${item.key}</div>
               <div style="color:var(--text-secondary); font-size:0.75rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.url}</div>
             </div>
-            <button class="action-btn delete-btn" onclick="deleteSyncItem(${index})" style="width:26px; height:26px; flex-shrink:0;" title="删除订阅">
-              <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
+            <div style="display:flex; gap:0.4rem; flex-shrink:0;">
+              <button class="action-btn download-btn" id="sync-btn-${index}" onclick="syncSingleItem('${encodeURIComponent(item.key)}', ${index})" style="width:26px; height:26px;" title="单次执行同步">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              </button>
+              <button class="action-btn delete-btn" onclick="deleteSyncItem(${index})" style="width:26px; height:26px;" title="删除订阅">
+                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
           </div>
         `;
       }).join('');
+    }
+
+    async function syncSingleItem(keyParam, index) {
+      const key = decodeURIComponent(keyParam);
+      const syncBtn = document.getElementById(`sync-btn-${index}`);
+      if (!syncBtn) return;
+      const originalHtml = syncBtn.innerHTML;
+      
+      syncBtn.disabled = true;
+      syncBtn.innerHTML = `
+        <span class="status-dot" style="display:inline-block; width:6px; height:6px; background:var(--accent-gold); box-shadow:0 0 8px var(--accent-gold); border-radius:50%; animation:pulse 1.2s infinite;"></span>
+      `;
+
+      try {
+        const res = await fetch(`/api/sync-now?key=${encodeURIComponent(key)}`, {
+          method: 'POST',
+          headers: getHeaders()
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.results && data.results[0] && data.results[0].status === 'success') {
+            showToast(`同步 ${key} 成功！`, 'success');
+          } else {
+            const errorMsg = (data.results && data.results[0] && data.results[0].error) || '未知错误';
+            showToast(`同步 ${key} 失败: ${errorMsg}`, 'error');
+          }
+          loadFiles(); // 重新加载文件列表
+        } else {
+          showToast(`同步请求失败`, 'error');
+        }
+      } catch (err) {
+        showToast(`同步异常: ${err.message}`, 'error');
+      } finally {
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = originalHtml;
+      }
     }
 
     async function saveSyncConfig(syncList) {
@@ -1428,6 +1541,38 @@
         syncBtn.innerHTML = originalHtml;
       }
     }
+
+    // 主题管理
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      if (savedTheme === 'light') {
+        document.documentElement.classList.add('theme-light');
+      } else {
+        document.documentElement.classList.remove('theme-light');
+      }
+      updateThemeIcon(savedTheme);
+    }
+
+    function toggleTheme() {
+      const isLight = document.documentElement.classList.toggle('theme-light');
+      const currentTheme = isLight ? 'light' : 'dark';
+      localStorage.setItem('theme', currentTheme);
+      updateThemeIcon(currentTheme);
+      showToast(`已切换为川普${currentTheme === 'light' ? '明亮' : '暗黑'}土豪金主题`, 'success');
+    }
+
+    function updateThemeIcon(theme) {
+      const themeIcon = document.getElementById('theme-icon');
+      if (!themeIcon) return;
+      if (theme === 'light') {
+        themeIcon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+      } else {
+        themeIcon.innerHTML = `<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>`;
+      }
+    }
+
+    // 立即执行初始化主题以防闪烁
+    initTheme();
 
     // 初始化运行
     window.onload = checkAuth;
