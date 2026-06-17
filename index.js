@@ -236,12 +236,64 @@ export default {
         }));
       }
 
+      // 路由：获取同步配置
+      if (pathname === '/api/sync-config' && request.method === 'GET') {
+        const configObject = await env.BUCKET.get('.config/sync_list.json');
+        if (!configObject) {
+          const defaultConfig = [
+            {
+              url: 'https://github.com/v2fly/geoip/releases/latest/download/geoip.dat',
+              key: 'geoip.dat'
+            }
+          ];
+          await env.BUCKET.put('.config/sync_list.json', JSON.stringify(defaultConfig), {
+            httpMetadata: { contentType: 'application/json' }
+          });
+          return corsResponse(new Response(JSON.stringify(defaultConfig), {
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+        const configText = await configObject.text();
+        return corsResponse(new Response(configText, {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      // 路由：更新同步配置
+      if (pathname === '/api/sync-config' && request.method === 'POST') {
+        const syncList = await request.json();
+        if (!Array.isArray(syncList)) {
+          return corsResponse(new Response(JSON.stringify({ error: 'Invalid config format' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+        await env.BUCKET.put('.config/sync_list.json', JSON.stringify(syncList), {
+          httpMetadata: { contentType: 'application/json' }
+        });
+        return corsResponse(new Response(JSON.stringify({ success: true }), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      // 路由：立即执行同步
+      if (pathname === '/api/sync-now' && request.method === 'POST') {
+        const results = await performGithubSync(env);
+        return corsResponse(new Response(JSON.stringify({ success: true, results }), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
       // 默认 404
       return corsResponse(new Response('Not Found', { status: 404 }));
 
     } catch (err) {
       return corsResponse(new Response(`Error: ${err.message}`, { status: 500 }));
     }
+  },
+
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(performGithubSync(env));
   }
 };
 
@@ -315,4 +367,58 @@ async function verifySignature(key, expires, signature, secret) {
   }
   const expectedSig = await generateSignature(key, expires, secret);
   return signature === expectedSig;
+}
+
+// 执行 GitHub 自动同步拉取逻辑
+async function performGithubSync(env) {
+  let syncList = [];
+  try {
+    const configObject = await env.BUCKET.get('.config/sync_list.json');
+    if (configObject) {
+      syncList = await configObject.json();
+    } else {
+      syncList = [
+        {
+          url: 'https://github.com/v2fly/geoip/releases/latest/download/geoip.dat',
+          key: 'geoip.dat'
+        }
+      ];
+      await env.BUCKET.put('.config/sync_list.json', JSON.stringify(syncList), {
+        httpMetadata: { contentType: 'application/json' }
+      });
+    }
+  } catch (e) {
+    console.error('Failed to load sync list config:', e.message);
+    return [{ error: 'Failed to load config: ' + e.message }];
+  }
+
+  const results = [];
+  for (const item of syncList) {
+    try {
+      if (!item.url || !item.key) continue;
+      
+      const res = await fetch(item.url, {
+        headers: {
+          'User-Agent': 'AetherStorage-Sync-Agent/1.0'
+        }
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      // 流式写入 R2 存储桶，防止 Workers 内存溢出
+      await env.BUCKET.put(item.key, res.body, {
+        httpMetadata: {
+          contentType: res.headers.get('Content-Type') || 'application/octet-stream'
+        }
+      });
+      
+      results.push({ key: item.key, status: 'success' });
+    } catch (err) {
+      console.error(`Sync failed for ${item.key}:`, err.message);
+      results.push({ key: item.key, status: 'failed', error: err.message });
+    }
+  }
+  return results;
 }

@@ -781,6 +781,36 @@
         </div>
       </div>
       
+      <!-- GitHub 自动同步订阅 -->
+      <div class="glass-card">
+        <div style="font-family: var(--font-outfit); font-size:1.15rem; font-weight:600; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem">
+          <svg style="width:20px;height:20px;stroke:var(--accent-gold);fill:none;stroke-width:2" viewBox="0 0 24 24">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          GitHub 订阅同步
+        </div>
+        
+        <!-- 已添加的订阅列表 -->
+        <div id="sync-list-container" style="display:flex; flex-direction:column; gap:0.6rem; margin-bottom:1rem; font-size:0.85rem;">
+          <!-- 动态加载 -->
+        </div>
+
+        <!-- 添加订阅的表单 -->
+        <div style="border-top:1px solid var(--panel-border); padding-top:1rem; display:flex; flex-direction:column; gap:0.6rem;">
+          <input type="text" id="sync-new-key" class="search-input" placeholder="保存名称 (如 geoip.dat)" style="max-width:100%; padding-left:0.75rem; font-size:0.8rem; height:34px;">
+          <input type="text" id="sync-new-url" class="search-input" placeholder="GitHub Release 最新下载 URL" style="max-width:100%; padding-left:0.75rem; font-size:0.8rem; height:34px;">
+          <button class="btn btn-secondary" onclick="addSyncItem()" style="padding:0.4rem 1rem; font-size:0.8rem; border-radius:6px; font-weight:600;">添加同步订阅</button>
+        </div>
+
+        <!-- 手动触发按钮 -->
+        <div style="margin-top:1rem; border-top:1px solid var(--panel-border); padding-top:1rem;">
+          <button class="btn" id="sync-now-btn" onclick="syncNow()" style="padding:0.5rem 1rem; font-size:0.85rem; border-radius:6px; font-weight:700;">
+            <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            立即执行同步
+          </button>
+        </div>
+      </div>
+
       <!-- 说明书 -->
       <div class="glass-card" style="font-size:0.8rem; line-height:1.6; color:var(--text-secondary)">
         <h3 style="font-family: var(--font-outfit); color:var(--text-primary); font-size:0.9rem; font-weight:600; margin-bottom:0.5rem">系统特性说明：</h3>
@@ -892,6 +922,7 @@
       if (token) {
         document.getElementById('auth-overlay').classList.add('hidden');
         loadFiles();
+        loadSyncConfig();
       } else {
         document.getElementById('auth-overlay').classList.remove('hidden');
       }
@@ -918,6 +949,7 @@
           document.getElementById('auth-overlay').classList.add('hidden');
           showToast('验证成功', 'success');
           loadFiles();
+          loadSyncConfig();
         } else {
           showToast('密码错误', 'error');
           shakeAuthCard();
@@ -1256,6 +1288,144 @@
         showToast('上传失败: ' + err.message, 'error');
         statusLabel.innerText = '上传出错';
         console.error(err);
+      }
+    }
+
+    // GitHub 订阅同步逻辑
+    let currentSyncList = [];
+
+    async function loadSyncConfig() {
+      try {
+        const res = await fetch('/api/sync-config', {
+          headers: getHeaders()
+        });
+        if (res.ok) {
+          currentSyncList = await res.json();
+          renderSyncList();
+        } else {
+          showToast('获取同步配置失败', 'error');
+        }
+      } catch (err) {
+        console.error('Failed to load sync list:', err);
+      }
+    }
+
+    function renderSyncList() {
+      const container = document.getElementById('sync-list-container');
+      if (currentSyncList.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-secondary); text-align:center; padding:0.5rem; font-size:0.8rem;">暂无订阅，请在下方添加</div>`;
+        return;
+      }
+
+      container.innerHTML = currentSyncList.map((item, index) => {
+        return `
+          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--panel-border); padding:0.5rem 0.75rem; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;" title="${item.url}">
+              <div style="font-weight:600; color:var(--text-primary); font-size:0.85rem;">${item.key}</div>
+              <div style="color:var(--text-secondary); font-size:0.75rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.url}</div>
+            </div>
+            <button class="action-btn delete-btn" onclick="deleteSyncItem(${index})" style="width:26px; height:26px; flex-shrink:0;" title="删除订阅">
+              <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function saveSyncConfig(syncList) {
+      try {
+        const res = await fetch('/api/sync-config', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getHeaders()
+          },
+          body: JSON.stringify(syncList)
+        });
+        if (res.ok) {
+          showToast('同步配置已更新', 'success');
+          loadSyncConfig();
+        } else {
+          showToast('更新同步配置失败', 'error');
+        }
+      } catch (err) {
+        showToast('保存配置出错: ' + err.message, 'error');
+      }
+    }
+
+    async function addSyncItem() {
+      const keyInput = document.getElementById('sync-new-key');
+      const urlInput = document.getElementById('sync-new-url');
+      const key = keyInput.value.trim();
+      const url = urlInput.value.trim();
+
+      if (!key || !url) {
+        showToast('请完整填写保存名称和下载链接', 'error');
+        return;
+      }
+
+      currentSyncList.push({ key, url });
+      await saveSyncConfig(currentSyncList);
+
+      keyInput.value = '';
+      urlInput.value = '';
+    }
+
+    async function deleteSyncItem(index) {
+      if (confirm('确认删除此 GitHub 同步订阅？')) {
+        currentSyncList.splice(index, 1);
+        await saveSyncConfig(currentSyncList);
+      }
+    }
+
+    async function syncNow() {
+      const syncBtn = document.getElementById('sync-now-btn');
+      const originalHtml = syncBtn.innerHTML;
+      
+      syncBtn.disabled = true;
+      syncBtn.innerHTML = `
+        <span class="status-dot" style="display:inline-block; width:8px; height:8px; margin-right:6px; background:var(--accent-gold); box-shadow:0 0 10px var(--accent-gold); border-radius:50%; animation:pulse 1.5s infinite;"></span>
+        正在同步中...
+      `;
+
+      try {
+        const res = await fetch('/api/sync-now', {
+          method: 'POST',
+          headers: getHeaders()
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          let successCount = 0;
+          let failCount = 0;
+          let details = [];
+
+          if (Array.isArray(data.results)) {
+            data.results.forEach(r => {
+              if (r.status === 'success') successCount++;
+              else {
+                failCount++;
+                details.push(`${r.key}: ${r.error}`);
+              }
+            });
+          }
+
+          if (failCount === 0) {
+            showToast(`同步成功！成功更新 ${successCount} 个文件`, 'success');
+          } else {
+            showToast(`同步完成，但有部分失败: 🟢 成功 ${successCount} | 🔴 失败 ${failCount}`, 'error');
+            console.error('Sync error details:', details.join('\n'));
+          }
+
+          loadFiles(); // 重新加载文件列表以渲染最新下载的文件
+        } else {
+          showToast('立即同步请求失败', 'error');
+        }
+      } catch (err) {
+        showToast('同步拉取异常: ' + err.message, 'error');
+      } finally {
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = originalHtml;
       }
     }
 
