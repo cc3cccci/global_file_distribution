@@ -10,17 +10,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-gradient: radial-gradient(circle at top left, #0f172a, #020617);
-      --panel-bg: rgba(30, 41, 59, 0.45);
-      --panel-border: rgba(255, 255, 255, 0.08);
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --accent-indigo: #6366f1;
-      --accent-purple: #a855f7;
-      --accent-cyan: #06b6d4;
+      --bg-gradient: radial-gradient(circle at top left, #12100e, #050403);
+      --panel-bg: rgba(28, 25, 21, 0.55);
+      --panel-border: rgba(212, 175, 55, 0.12);
+      --text-primary: #fcfbfa;
+      --text-secondary: #a6a092;
+      --accent-gold-light: #f5e8be;
+      --accent-gold: #d4af37;
+      --accent-gold-dark: #aa841c;
       --accent-emerald: #10b981;
       --accent-rose: #f43f5e;
-      --shadow-color: rgba(0, 0, 0, 0.5);
+      --shadow-color: rgba(0, 0, 0, 0.65);
       --font-outfit: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
@@ -48,7 +48,7 @@
       left: -10%;
       width: 50vw;
       height: 50vw;
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 70%);
+      background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0) 70%);
       pointer-events: none;
       z-index: -1;
     }
@@ -59,7 +59,7 @@
       right: -10%;
       width: 50vw;
       height: 50vw;
-      background: radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, rgba(168, 85, 247, 0) 70%);
+      background: radial-gradient(circle, rgba(170, 132, 28, 0.06) 0%, rgba(170, 132, 28, 0) 70%);
       pointer-events: none;
       z-index: -1;
     }
@@ -68,7 +68,7 @@
     header {
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(18, 16, 14, 0.75);
       border-bottom: 1px solid var(--panel-border);
       position: sticky;
       top: 0;
@@ -88,7 +88,7 @@
       font-family: var(--font-outfit);
       font-size: 1.6rem;
       font-weight: 700;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo), var(--accent-purple));
+      background: linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold), var(--accent-gold-dark));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       display: flex;
@@ -104,7 +104,7 @@
       gap: 0.5rem;
       font-size: 0.85rem;
       color: var(--text-secondary);
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.03);
       padding: 0.4rem 0.8rem;
       border-radius: 20px;
       border: 1px solid var(--panel-border);
@@ -113,15 +113,15 @@
     .status-dot {
       width: 8px;
       height: 8px;
-      background: var(--accent-emerald);
+      background: var(--accent-gold);
       border-radius: 50%;
-      box-shadow: 0 0 10px var(--accent-emerald);
+      box-shadow: 0 0 10px var(--accent-gold);
       animation: pulse 2s infinite;
     }
 
     .logout-btn {
       background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       color: var(--text-secondary);
       padding: 0.4rem 1rem;
       border-radius: 8px;
@@ -168,7 +168,7 @@
     }
 
     .glass-card:hover {
-      border-color: rgba(255, 255, 255, 0.12);
+      border-color: rgba(212, 175, 55, 0.25);
     }
 
     /* 拖拽上传区 */
@@ -181,7 +181,7 @@
     }
 
     .upload-zone {
-      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border: 2px dashed rgba(212, 175, 55, 0.25);
       border-radius: 12px;
       padding: 3rem 1.5rem;
       text-align: center;
@@ -193,8 +193,8 @@
     }
 
     .upload-zone:hover, .upload-zone.dragover {
-      border-color: var(--accent-indigo);
-      background: rgba(99, 102, 241, 0.04);
+      border-color: var(--accent-gold);
+      background: rgba(212, 175, 55, 0.04);
       transform: translateY(-2px);
     }
 
@@ -207,7 +207,7 @@
     }
 
     .upload-zone:hover svg, .upload-zone.dragover svg {
-      stroke: var(--accent-indigo);
+      stroke: var(--accent-gold);
       transform: translateY(-5px);
     }
 
@@ -249,7 +249,7 @@
     }
 
     .progress-percent {
-      color: var(--accent-cyan);
+      color: var(--accent-gold);
       font-weight: 600;
       font-family: var(--font-outfit);
     }
@@ -265,7 +265,7 @@
     .progress-bar-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-indigo), var(--accent-purple));
+      background: linear-gradient(90deg, var(--accent-gold-dark), var(--accent-gold), var(--accent-gold-light));
       border-radius: 10px;
       transition: width 0.2s ease;
       position: relative;
@@ -293,12 +293,12 @@
 
     /* 按钮组 */
     .btn {
-      background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
-      color: var(--text-primary);
+      background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark));
+      color: #12100e;
       border: none;
       padding: 0.75rem 1.5rem;
       border-radius: 8px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -309,7 +309,7 @@
     }
 
     .btn:hover {
-      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.35);
       transform: translateY(-1px);
     }
 
@@ -341,7 +341,7 @@
       font-family: var(--font-outfit);
       font-size: 1.4rem;
       font-weight: 600;
-      background: linear-gradient(to right, #ffffff, #cbd5e1);
+      background: linear-gradient(to right, #ffffff, #e2e8f0);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -360,7 +360,7 @@
 
     .search-input {
       width: 100%;
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--panel-border);
       border-radius: 8px;
       padding: 0.5rem 1rem 0.5rem 2.2rem;
@@ -371,9 +371,9 @@
 
     .search-input:focus {
       outline: none;
-      border-color: var(--accent-indigo);
-      background: rgba(255, 255, 255, 0.07);
-      box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+      border-color: var(--accent-gold);
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
     }
 
     .search-icon {
@@ -402,7 +402,7 @@
     }
 
     th {
-      background: rgba(255, 255, 255, 0.02);
+      background: rgba(255, 255, 255, 0.01);
       color: var(--text-secondary);
       font-weight: 500;
       padding: 1rem 1.25rem;
@@ -428,7 +428,7 @@
     }
 
     tr:hover td {
-      background-color: rgba(255, 255, 255, 0.02);
+      background-color: rgba(212, 175, 55, 0.01);
     }
 
     .file-name-cell {
@@ -448,7 +448,7 @@
     }
 
     .file-name-text:hover {
-      color: var(--accent-cyan);
+      color: var(--accent-gold);
       text-decoration: underline;
     }
 
@@ -456,8 +456,8 @@
       width: 20px;
       height: 20px;
       flex-shrink: 0;
-      stroke: var(--accent-indigo);
-      fill: rgba(99, 102, 241, 0.1);
+      stroke: var(--accent-gold);
+      fill: rgba(212, 175, 55, 0.06);
     }
 
     .actions-cell {
@@ -467,7 +467,7 @@
     }
 
     .action-btn {
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--panel-border);
       color: var(--text-secondary);
       border-radius: 6px;
@@ -492,19 +492,19 @@
     }
 
     .action-btn.download-btn:hover {
-      background: rgba(6, 182, 212, 0.15);
-      border-color: var(--accent-cyan);
-      color: var(--accent-cyan);
+      background: rgba(212, 175, 55, 0.12);
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
     }
 
     .action-btn.share-btn:hover {
-      background: rgba(168, 85, 247, 0.15);
-      border-color: var(--accent-purple);
-      color: var(--accent-purple);
+      background: rgba(245, 232, 190, 0.12);
+      border-color: var(--accent-gold-light);
+      color: var(--accent-gold-light);
     }
 
     .action-btn.delete-btn:hover {
-      background: rgba(244, 63, 94, 0.15);
+      background: rgba(244, 63, 94, 0.12);
       border-color: var(--accent-rose);
       color: var(--accent-rose);
     }
@@ -518,7 +518,7 @@
     .empty-state svg {
       width: 48px;
       height: 48px;
-      stroke: rgba(255, 255, 255, 0.15);
+      stroke: rgba(212, 175, 55, 0.15);
       margin-bottom: 1rem;
     }
 
@@ -526,7 +526,7 @@
     .auth-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: radial-gradient(circle at top left, #0f172a, #020617);
+      background: radial-gradient(circle at top left, #12100e, #050403);
       z-index: 100;
       display: flex;
       align-items: center;
@@ -544,12 +544,12 @@
     .auth-card {
       width: 100%;
       max-width: 400px;
-      background: rgba(30, 41, 59, 0.6);
+      background: rgba(28, 25, 21, 0.7);
       backdrop-filter: blur(20px);
       border: 1px solid var(--panel-border);
       border-radius: 16px;
       padding: 2.5rem 2rem;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.65);
       text-align: center;
     }
 
@@ -557,7 +557,7 @@
       font-family: var(--font-outfit);
       font-size: 2rem;
       font-weight: 700;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo), var(--accent-purple));
+      background: linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold), var(--accent-gold-dark));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       margin-bottom: 0.5rem;
@@ -576,7 +576,7 @@
 
     .auth-input {
       width: 100%;
-      background: rgba(0,0,0,0.2);
+      background: rgba(0,0,0,0.3);
       border: 1px solid var(--panel-border);
       border-radius: 8px;
       padding: 0.8rem 1.2rem;
@@ -589,8 +589,8 @@
 
     .auth-input:focus {
       outline: none;
-      border-color: var(--accent-indigo);
-      box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.25);
     }
 
     /* 提示消息 Toast */
@@ -605,7 +605,7 @@
     }
 
     .toast {
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(18, 16, 14, 0.9);
       backdrop-filter: blur(8px);
       border: 1px solid var(--panel-border);
       color: var(--text-primary);
@@ -623,7 +623,7 @@
 
     .toast.success { border-left: 3px solid var(--accent-emerald); }
     .toast.error { border-left: 3px solid var(--accent-rose); }
-    .toast.info { border-left: 3px solid var(--accent-cyan); }
+    .toast.info { border-left: 3px solid var(--accent-gold); }
 
     /* 摇晃动画 */
     @keyframes shake {
@@ -681,7 +681,7 @@
     }
 
     .confirm-modal {
-      background: #1e293b;
+      background: #1c1814;
       border: 1px solid var(--panel-border);
       border-radius: 12px;
       padding: 1.8rem;
@@ -752,7 +752,7 @@
     <div class="upload-container">
       <div class="glass-card">
         <div style="font-family: var(--font-outfit); font-size:1.15rem; font-weight:600; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem">
-          <svg style="width:20px;height:20px;stroke:var(--accent-indigo);fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <svg style="width:20px;height:20px;stroke:var(--accent-gold);fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           上传控制台
         </div>
         <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
