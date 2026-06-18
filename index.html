@@ -1485,11 +1485,11 @@
 
       <!-- Create new tag -->
       <div style="border-top:1px solid var(--panel-border);padding-top:0.85rem;">
-        <div style="font-size:0.78rem;font-weight:600;margin-bottom:0.5rem;color:var(--text-secondary)">创建自定义标签</div>
+        <div id="tag-form-title" style="font-size:0.78rem;font-weight:600;margin-bottom:0.5rem;color:var(--text-secondary)">创建自定义标签</div>
         <div class="tag-create-row">
           <input type="text" id="new-tag-name" class="form-input" placeholder="标签名称" style="flex:1;min-width:90px;">
           <div class="tag-color-swatches" id="tag-color-swatches"></div>
-          <button class="btn btn-secondary" onclick="createCustomTag()" style="padding:0.45rem 0.85rem;font-size:0.78rem;">添加</button>
+          <button id="tag-submit-btn" class="btn btn-secondary" onclick="saveTag()" style="padding:0.45rem 0.85rem;font-size:0.78rem;">添加</button>
         </div>
       </div>
 
@@ -1811,6 +1811,8 @@
       }).join('');
     }
 
+    let editingTagIdx = null;
+
     function toggleTagPickerItem(encodedName) {
       const name = decodeURIComponent(encodedName);
       tagPickerSelected.has(name) ? tagPickerSelected.delete(name) : tagPickerSelected.add(name);
@@ -1855,6 +1857,7 @@
 
     function closeTagMgmtModal() {
       document.getElementById('tag-mgmt-modal').classList.remove('active');
+      resetTagForm();
     }
 
     function renderTagMgmtList() {
@@ -1864,7 +1867,8 @@
         return `<div style="display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.6rem;background:${tag.color}18;border:1.5px solid ${tag.color}55;border-radius:20px">
           <span style="width:8px;height:8px;border-radius:50%;background:${tag.color};flex-shrink:0"></span>
           <span style="font-size:0.8rem;font-weight:600;color:${tag.color}">${tag.emoji} ${tag.name}</span>
-          ${!tag.builtin ? `<button onclick="deleteCustomTag(${i})" title="删除" style="background:transparent;border:none;color:${tag.color};cursor:pointer;padding:0 0.1rem;font-size:0.85rem;opacity:0.6;margin-left:0.2rem;">✕</button>` : ''}
+          <button onclick="editCustomTag(${i})" title="编辑标签" style="background:transparent;border:none;color:${tag.color};cursor:pointer;padding:0 0.1rem;font-size:0.85rem;opacity:0.6;margin-left:0.2rem;">✎</button>
+          ${!tag.builtin ? `<button onclick="deleteCustomTag(${i})" title="删除标签" style="background:transparent;border:none;color:${tag.color};cursor:pointer;padding:0 0.1rem;font-size:0.85rem;opacity:0.6;">✕</button>` : ''}
         </div>`;
       }).join('');
     }
@@ -1882,20 +1886,61 @@
       renderTagColorSwatches();
     }
 
-    async function createCustomTag() {
+    function resetTagForm() {
+      editingTagIdx = null;
+      document.getElementById('new-tag-name').value = '';
+      document.getElementById('tag-form-title').textContent = '创建自定义标签';
+      document.getElementById('tag-submit-btn').textContent = '添加';
+      newTagColor = '#ef4444';
+      renderTagColorSwatches();
+    }
+
+    function editCustomTag(idx) {
+      const tag = tagDefs[idx];
+      if (!tag) return;
+      editingTagIdx = idx;
+      document.getElementById('new-tag-name').value = tag.name;
+      document.getElementById('tag-form-title').textContent = tag.builtin ? '编辑内置标签' : '编辑自定义标签';
+      document.getElementById('tag-submit-btn').textContent = '保存';
+      newTagColor = tag.color;
+      renderTagColorSwatches();
+    }
+
+    async function saveTag() {
       const name = document.getElementById('new-tag-name').value.trim();
       if (!name) { showToast('请输入标签名称', 'error'); return; }
-      if (tagDefs.find(t => t.name === name)) { showToast('标签已存在', 'error'); return; }
 
-      // Pick an emoji based on color
+      // Check duplicate names (excluding current tag being edited)
+      const duplicate = tagDefs.find((t, i) => t.name === name && i !== editingTagIdx);
+      if (duplicate) { showToast('标签名称已存在', 'error'); return; }
+
       const emojiMap = {
         '#ef4444':'🔴','#f97316':'🟠','#f59e0b':'🟡','#22c55e':'🟢',
         '#14b8a6':'🔵','#3b82f6':'🔵','#8b5cf6':'🟣','#ec4899':'🩷','#78716c':'⚫'
       };
       const emoji = emojiMap[newTagColor] || '🏷️';
 
-      const newTag = { name, color: newTagColor, emoji, builtin: false };
-      tagDefs.push(newTag);
+      const isEdit = editingTagIdx !== null;
+      let oldName = null;
+      let originalTag = null;
+
+      if (isEdit) {
+        originalTag = { ...tagDefs[editingTagIdx] };
+        oldName = originalTag.name;
+        tagDefs[editingTagIdx] = {
+          ...originalTag,
+          name,
+          color: newTagColor,
+          emoji
+        };
+      } else {
+        tagDefs.push({
+          name,
+          color: newTagColor,
+          emoji,
+          builtin: false
+        });
+      }
 
       try {
         const r = await fetch('/api/tag-defs', {
@@ -1904,20 +1949,59 @@
           body: JSON.stringify(tagDefs)
         });
         if (r.ok) {
-          document.getElementById('new-tag-name').value = '';
+          // If name changed in edit mode, update all files containing the old tag
+          if (isEdit && oldName && oldName !== name) {
+            let changed = false;
+            for (const [key, tags] of Object.entries(fileTags)) {
+              if (Array.isArray(tags)) {
+                const idx = tags.indexOf(oldName);
+                if (idx !== -1) {
+                  tags[idx] = name;
+                  changed = true;
+                }
+              }
+            }
+            if (changed) {
+              await fetch('/api/tags', {
+                method: 'POST',
+                headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileTags })
+              });
+            }
+            if (activeTagFilter === oldName) {
+              activeTagFilter = name;
+            }
+          }
+
+          resetTagForm();
           renderTagMgmtList();
           renderTagsInSidebar();
-          showToast(`标签「${name}」已创建`, 'success');
+          renderContent();
+          if (currentNav === 'tag') renderTagFileList();
+          showToast(isEdit ? `标签「${name}」已保存` : `标签「${name}」已创建`, 'success');
+        } else {
+          if (isEdit) {
+            tagDefs[editingTagIdx] = originalTag;
+          } else {
+            tagDefs.pop();
+          }
+          showToast(isEdit ? '保存失败' : '创建失败', 'error');
+        }
+      } catch(e) {
+        if (isEdit) {
+          tagDefs[editingTagIdx] = originalTag;
         } else {
           tagDefs.pop();
-          showToast('创建失败', 'error');
         }
-      } catch(e) { tagDefs.pop(); showToast('请求异常', 'error'); }
+        showToast('请求异常', 'error');
+      }
     }
 
     async function deleteCustomTag(idx) {
       const tag = tagDefs[idx];
       if (!tag || tag.builtin) return;
+      if (!confirm(`确定要删除标签「${tag.name}」吗？相关文件的该标签也将被移除。`)) return;
+
       tagDefs.splice(idx, 1);
 
       try {
@@ -1927,8 +2011,34 @@
           body: JSON.stringify(tagDefs)
         });
         if (r.ok) {
+          let changed = false;
+          for (const [key, tags] of Object.entries(fileTags)) {
+            if (Array.isArray(tags)) {
+              const tIdx = tags.indexOf(tag.name);
+              if (tIdx !== -1) {
+                tags.splice(tIdx, 1);
+                changed = true;
+              }
+            }
+          }
+          if (changed) {
+            await fetch('/api/tags', {
+              method: 'POST',
+              headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+              body: JSON.stringify({ fileTags })
+            });
+          }
+
           renderTagMgmtList();
           renderTagsInSidebar();
+          renderContent();
+          if (currentNav === 'tag') {
+            if (activeTagFilter === tag.name) {
+              setNavView('all');
+            } else {
+              renderTagFileList();
+            }
+          }
           showToast(`标签「${tag.name}」已删除`, 'success');
         } else {
           tagDefs.splice(idx, 0, tag);

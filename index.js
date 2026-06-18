@@ -418,17 +418,21 @@ export default {
         }));
       }
 
-      // 路由：更新单个文件的标签（POST body: { key, tags: ["重要", "工作"] }）
+      // 路由：更新单个或批量文件的标签（POST body: { key, tags: ["重要", "工作"] } 或 { fileTags }）
       if (pathname === '/api/tags' && request.method === 'POST') {
-        const { key, tags } = await request.json();
-        if (!key) {
-          return corsResponse(new Response('Missing file key', { status: 400 }));
-        }
+        const body = await request.json();
         let allTags = await getFileTags(env);
-        if (!tags || tags.length === 0) {
-          delete allTags[key];
+        if (body.key) {
+          const { key, tags } = body;
+          if (!tags || tags.length === 0) {
+            delete allTags[key];
+          } else {
+            allTags[key] = tags;
+          }
+        } else if (body.fileTags) {
+          allTags = body.fileTags;
         } else {
-          allTags[key] = tags;
+          return corsResponse(new Response('Missing key or fileTags', { status: 400 }));
         }
         await saveFileTags(env, allTags);
         return corsResponse(new Response(JSON.stringify({ success: true, tags: allTags }), {
