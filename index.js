@@ -285,7 +285,7 @@ export default {
         }));
       }
 
-      // 路由：删除文件
+      // 路由：删除文件与文件夹（级联删除）
       if (pathname === '/api/delete' && request.method === 'DELETE') {
         const keyParam = url.searchParams.get('key');
         if (!keyParam) {
@@ -293,8 +293,30 @@ export default {
         }
         const key = decodeURIComponent(keyParam);
 
-        await env.BUCKET.delete(key);
+        if (key.endsWith('/')) {
+          const listResult = await env.BUCKET.list({ prefix: key });
+          const keysToDelete = listResult.objects.map(obj => obj.key);
+          if (keysToDelete.length > 0) {
+            await env.BUCKET.delete(keysToDelete);
+          }
+        } else {
+          await env.BUCKET.delete(key);
+        }
 
+        return corsResponse(new Response(JSON.stringify({ success: true }), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      // 路由：创建空文件夹占位符
+      if (pathname === '/api/create-folder' && request.method === 'POST') {
+        const { path } = await request.json();
+        if (!path || !path.endsWith('/')) {
+          return corsResponse(new Response('Invalid folder path', { status: 400 }));
+        }
+        await env.BUCKET.put(path, new ArrayBuffer(0), {
+          httpMetadata: { contentType: 'application/x-directory' }
+        });
         return corsResponse(new Response(JSON.stringify({ success: true }), {
           headers: { 'Content-Type': 'application/json' }
         }));

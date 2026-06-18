@@ -988,6 +988,65 @@
       font-size: 1.2rem; flex-shrink: 0;
     }
 
+    /* Quick tag popover styling */
+    .quick-tag-dropdown {
+      position: absolute;
+      z-index: 1000;
+      background: var(--modal-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 0.5rem;
+      box-shadow: 0 4px 12px var(--modal-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 140px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .quick-tag-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.5rem;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      color: var(--text-primary);
+      transition: background 0.15s;
+      user-select: none;
+    }
+    .quick-tag-item:hover {
+      background: var(--sidebar-hover-bg);
+    }
+    .quick-tag-checkbox {
+      accent-color: var(--accent-gold);
+      width: 13px;
+      height: 13px;
+      cursor: pointer;
+    }
+    .quick-tag-add-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px dashed var(--accent-gold);
+      background: transparent;
+      color: var(--accent-gold);
+      cursor: pointer;
+      font-size: 0.65rem;
+      line-height: 1;
+      padding: 0;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .quick-tag-add-btn:hover {
+      background: var(--sidebar-active-bg);
+      transform: scale(1.1);
+    }
+
     /* =============================================
        ANIMATIONS
        ============================================= */
@@ -1091,11 +1150,15 @@
         <span class="sidebar-logo-text">AetherStorage</span>
       </div>
 
-      <!-- Upload FAB -->
-      <div class="upload-fab-wrap">
-        <button class="upload-fab" onclick="triggerUpload()">
+      <!-- Upload FAB and New Folder Button -->
+      <div class="upload-fab-wrap" style="display:flex;gap:0.5rem;padding:0.85rem 0.85rem 0.5rem;">
+        <button class="upload-fab" onclick="triggerUpload()" style="flex:1;">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
           上传文件
+        </button>
+        <button class="upload-fab btn-secondary" onclick="openNewFolderModal()" style="flex:1;background:transparent;border:1px dashed var(--accent-gold);color:var(--accent-gold);box-shadow:none;padding: 0.6rem 0;" title="新建文件夹">
+          <svg viewBox="0 0 24 24" style="stroke:var(--accent-gold);"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          新文件夹
         </button>
       </div>
 
@@ -1450,6 +1513,21 @@
     </div>
   </div>
 
+  <!-- ===== NEW FOLDER MODAL ===== -->
+  <div class="modal-overlay" id="new-folder-modal">
+    <div class="modal">
+      <div class="modal-title">新建文件夹</div>
+      <div class="modal-desc" style="margin-bottom: 1rem;">在当前文件夹路径下创建一个新虚拟文件夹。</div>
+      <div style="margin-bottom: 1.25rem;">
+        <input type="text" class="form-input" id="new-folder-name" placeholder="请输入文件夹名称" style="text-align:left;letter-spacing:normal;">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeNewFolderModal()">取消</button>
+        <button class="btn" onclick="submitNewFolder()">创建</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== TOAST CONTAINER ===== -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -1470,6 +1548,8 @@
     let currentView    = localStorage.getItem('fileView') || 'list'; // list | grid
     let currentNav     = 'all'; // all | shared | sync | tag
     let dragCount      = 0;
+    let currentPath    = ''; // virtual folder path (e.g., 'docs/')
+    let quickTagDropdown = null; // tracking the quick tag dropdown element
 
     // ============================================================
     // TAG STATE
@@ -1533,6 +1613,9 @@
     function setTagView(encodedName) {
       activeTagFilter = decodeURIComponent(encodedName);
       currentNav = 'tag';
+      currentPath = ''; // clear virtual folder path
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) searchInput.value = '';
 
       // Update sidebar nav active state
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -1592,10 +1675,39 @@
 
     // Build a file row HTML (reusable for both list view and tag view)
     function buildFileRow(f) {
+      const isFolder = f.isFolder || f.key.endsWith('/');
+      const name = f.name || f.key;
+      const k = ek(f.key);
       const sel = selectedFiles.has(f.key);
+
+      if (isFolder) {
+        return `<tr class="file-row" onclick="handleRowClick(event,'${k}')">
+          <td class="col-chk" onclick="event.stopPropagation()">
+            <!-- No checkbox for folders -->
+          </td>
+          <td>
+            <div class="fname-cell">
+              ${getFileIcon(f.key, 28)}
+              <div style="min-width:0">
+                <div class="fname-text" style="font-weight: 600;" title="${name}">${name}</div>
+              </div>
+            </div>
+          </td>
+          <td class="col-size" style="color:var(--text-secondary);white-space:nowrap">-</td>
+          <td class="col-date" style="color:var(--text-secondary);font-size:0.78rem;white-space:nowrap">${formatDate(f.uploaded)}</td>
+          <td class="col-status">-</td>
+          <td onclick="event.stopPropagation()">
+            <div class="row-actions">
+              <button class="act-btn del" onclick="confirmDelete('${k}')" title="删除文件夹">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      }
+
       const pub = publicFiles.includes(f.key);
       const tags = fileTags[f.key] || [];
-      const k = ek(f.key);
       const tagsHtml = tags.map(t => {
         const def = getTagDef(t);
         return `<span class="tag-chip" style="color:${def.color};border-color:${def.color}55;background:${def.color}15">
@@ -1611,8 +1723,11 @@
           <div class="fname-cell">
             ${getFileIcon(f.key, 28)}
             <div style="min-width:0">
-              <div class="fname-text" title="${f.key}">${f.key}</div>
-              ${tagsHtml ? `<div class="tag-chips-row">${tagsHtml}</div>` : ''}
+              <div class="fname-text" title="${name}">${name}</div>
+              <div class="tag-chips-row" onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap;margin-top:0.25rem;">
+                ${tagsHtml}
+                <button class="quick-tag-add-btn" onclick="showQuickTagPicker(event, '${k}')" title="快速打标签">+</button>
+              </div>
             </div>
           </div>
         </td>
@@ -1965,6 +2080,9 @@
     function setNavView(name) {
       currentNav = name;
       activeTagFilter = null; // reset tag filter when navigating to other views
+      currentPath = ''; // clear virtual folder path
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) searchInput.value = '';
 
       // Update sidebar nav active state
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -2025,10 +2143,24 @@
     // ============================================================
     function renderContent() {
       const q = document.getElementById('search-input').value.toLowerCase().trim();
-      const files = allFiles.filter(f => f.key.toLowerCase().includes(q));
-      document.getElementById('file-count-badge').textContent = files.length+' 个';
-      if (currentView === 'list') renderListView(files);
-      else renderGridView(files);
+      let displayItems = [];
+
+      if (q) {
+        // Global flat search
+        const filtered = allFiles.filter(f => f.key.toLowerCase().includes(q) && !f.key.endsWith('/'));
+        document.getElementById('file-count-badge').textContent = filtered.length + ' 个';
+        displayItems = filtered.map(f => ({ ...f, name: f.key, isFolder: false }));
+      } else {
+        // Virtual directory listing
+        const folderAndFiles = getItemsInCurrentPath(allFiles);
+        document.getElementById('file-count-badge').textContent = folderAndFiles.length + ' 个';
+        displayItems = folderAndFiles;
+      }
+
+      renderBreadcrumbs();
+
+      if (currentView === 'list') renderListView(displayItems);
+      else renderGridView(displayItems);
     }
 
     function renderListView(files) {
@@ -2042,14 +2174,13 @@
               <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
               <polyline points="13 2 13 9 20 9"/>
             </svg>
-            <div class="empty-title">暂无文件</div>
-            <div class="empty-desc">点击左侧「上传文件」按鈕或将文件拖拽至此处</div>
+            <div class="empty-title">暂无内容</div>
+            <div class="empty-desc">上传文件或新建文件夹</div>
           </div>
         </td></tr>`;
         return;
       }
 
-      // Reuse buildFileRow to include tag chips
       tbody.innerHTML = files.map(f => buildFileRow(f)).join('');
     }
 
@@ -2059,21 +2190,49 @@
 
       if (!files.length) {
         container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-          <div class="empty-title">暂无文件</div>
-          <div class="empty-desc">拖拽或点击「上传文件」</div>
+          <div class="empty-title">暂无内容</div>
+          <div class="empty-desc">上传文件或新建文件夹</div>
         </div>`;
         return;
       }
 
       container.innerHTML = files.map(f => {
+        const isFolder = f.isFolder || f.key.endsWith('/');
+        const name = f.name || f.key;
+        const k = ek(f.key);
         const sel = selectedFiles.has(f.key);
+
+        if (isFolder) {
+          return `<div class="grid-card" onclick="handleGridClick(event,'${k}')">
+            <div class="grid-icon" style="margin-top: 0.5rem;">${getFileIcon(f.key, 48)}</div>
+            <div class="grid-name" style="font-weight:600;margin-top:0.4rem;" title="${name}">${name}</div>
+            <div class="grid-size">-</div>
+            <div class="grid-actions">
+              <button class="act-btn del" onclick="event.stopPropagation();confirmDelete('${k}')" title="删除文件夹">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>`;
+        }
+
         const pub = publicFiles.includes(f.key);
-        const k   = ek(f.key);
+        const tags = fileTags[f.key] || [];
+        const tagsHtml = tags.map(t => {
+          const def = getTagDef(t);
+          return `<span class="tag-chip" style="font-size: 0.65rem; padding: 0.05rem 0.3rem; color:${def.color};border-color:${def.color}55;background:${def.color}15">
+            <span class="tag-chip-dot" style="width:4px;height:4px;background:${def.color}"></span>${t}
+          </span>`;
+        }).join('');
+
         return `<div class="grid-card ${sel?'selected':''}" onclick="handleGridClick(event,'${k}')">
           <input type="checkbox" class="grid-chk" ${sel?'checked':''} onclick="event.stopPropagation()" onchange="toggleSelectFile('${k}',this.checked)">
           <div class="grid-icon">${getFileIcon(f.key, 48)}</div>
-          <div class="grid-name" title="${f.key}">${f.key}</div>
+          <div class="grid-name" title="${name}">${name}</div>
           <div class="grid-size">${formatBytes(f.size)}</div>
+          <div class="tag-chips-row" onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap;margin-top:0.4rem;min-height:18px;justify-content:center;width:100%;">
+            ${tagsHtml}
+            <button class="quick-tag-add-btn" onclick="showQuickTagPicker(event, '${k}')" title="快速打标签">+</button>
+          </div>
           ${pub?`<div class="grid-public-badge">🌐 公开</div>`:''}
           <div class="grid-actions">
             <button class="act-btn dl" onclick="event.stopPropagation();downloadFile('${k}')" title="下载">
@@ -2147,14 +2306,24 @@
     // ROW CLICK → CONTEXT PANEL
     // ============================================================
     function handleRowClick(event, keyParam) {
-      if (event.target.closest('.row-actions, .col-chk, input')) return;
-      const file = allFiles.find(f => f.key === dk(keyParam));
+      if (event.target.closest('.row-actions, .col-chk, input, .quick-tag-add-btn')) return;
+      const k = dk(keyParam);
+      if (k.endsWith('/')) {
+        navigateToPath(k);
+        return;
+      }
+      const file = allFiles.find(f => f.key === k);
       if (file) openContextPanel(file);
     }
 
     function handleGridClick(event, keyParam) {
-      if (event.target.closest('.grid-actions') || event.target.type==='checkbox') return;
-      const file = allFiles.find(f => f.key === dk(keyParam));
+      if (event.target.closest('.grid-actions, .quick-tag-add-btn') || event.target.type==='checkbox') return;
+      const k = dk(keyParam);
+      if (k.endsWith('/')) {
+        navigateToPath(k);
+        return;
+      }
+      const file = allFiles.find(f => f.key === k);
       if (file) openContextPanel(file);
     }
 
@@ -2419,7 +2588,7 @@
       try {
         const initR = await fetch('/api/upload-init', {
           method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
-          body: JSON.stringify({ filename: file.name, contentType: file.type||'application/octet-stream' })
+          body: JSON.stringify({ filename: currentPath + file.name, contentType: file.type||'application/octet-stream' })
         });
         if (!initR.ok) throw new Error('初始化上传失败');
         const initD = await initR.json();
@@ -2485,24 +2654,214 @@
       } catch(e){ showToast('请求异常: '+e.message,'error'); }
     }
 
+    // ============================================================
+    // FOLDER OPERATIONS
+    // ============================================================
+    function openNewFolderModal() {
+      document.getElementById('new-folder-name').value = '';
+      document.getElementById('new-folder-modal').classList.add('active');
+      document.getElementById('new-folder-name').focus();
+    }
+
+    function closeNewFolderModal() {
+      document.getElementById('new-folder-modal').classList.remove('active');
+    }
+
+    async function submitNewFolder() {
+      const folderName = document.getElementById('new-folder-name').value.trim();
+      if (!folderName) {
+        showToast('文件夹名称不能为空', 'error');
+        return;
+      }
+      if (folderName.includes('/') || folderName.includes('\\')) {
+        showToast('文件夹名称不能包含斜杠', 'error');
+        return;
+      }
+      const path = currentPath + folderName + '/';
+      try {
+        const r = await fetch('/api/create-folder', {
+          method: 'POST',
+          headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path })
+        });
+        if (r.ok) {
+          showToast(`文件夹「${folderName}」创建成功`, 'success');
+          closeNewFolderModal();
+          await loadFiles();
+        } else {
+          showToast('创建文件夹失败', 'error');
+        }
+      } catch (e) {
+        showToast('请求异常: ' + e.message, 'error');
+      }
+    }
+
+    function navigateToPath(path) {
+      currentPath = path;
+      clearSelection();
+      renderContent();
+    }
+
+    function renderBreadcrumbs() {
+      const container = document.querySelector('.topbar-breadcrumb');
+      if (!container) return;
+      
+      let html = `<span onclick="navigateToPath('')" style="cursor:pointer;color:var(--text-primary)">全部文件</span>`;
+      if (currentPath) {
+        const parts = currentPath.split('/').filter(Boolean);
+        let cumulativePath = '';
+        parts.forEach((part) => {
+          cumulativePath += part + '/';
+          html += ` <span style="color:var(--text-secondary);margin:0 2px;">/</span> <span onclick="navigateToPath('${cumulativePath}')" style="cursor:pointer;color:var(--text-primary)">${part}</span>`;
+        });
+      }
+      html += ` <span class="topbar-badge" id="file-count-badge">0 个</span>`;
+      container.innerHTML = html;
+    }
+
+    function getItemsInCurrentPath(files) {
+      const folders = new Map();
+      const items = [];
+      files.forEach(f => {
+        if (!f.key.startsWith(currentPath)) return;
+        if (f.key === currentPath) return; // skip self placeholder
+        
+        const relative = f.key.slice(currentPath.length);
+        const slashIdx = relative.indexOf('/');
+        if (slashIdx !== -1) {
+          const folderName = relative.slice(0, slashIdx);
+          const folderKey = currentPath + folderName + '/';
+          if (!folders.has(folderName)) {
+            folders.set(folderName, {
+              key: folderKey,
+              size: 0,
+              uploaded: f.uploaded,
+              isFolder: true
+            });
+          } else {
+            const existing = folders.get(folderName);
+            if (new Date(f.uploaded) > new Date(existing.uploaded)) {
+              existing.uploaded = f.uploaded;
+            }
+          }
+        } else {
+          if (f.key.endsWith('/')) return; // ignore directory placeholder as file
+          items.push({
+            ...f,
+            isFolder: false
+          });
+        }
+      });
+      return [...folders.values(), ...items];
+    }
+
+    // ============================================================
+    // QUICK TAG PICKER (INLINE POPUP)
+    // ============================================================
+    function closeAllQuickTagPickers() {
+      if (quickTagDropdown) {
+        quickTagDropdown.remove();
+        quickTagDropdown = null;
+      }
+    }
+
+    function showQuickTagPicker(event, keyParam) {
+      event.stopPropagation();
+      closeAllQuickTagPickers();
+
+      const key = dk(keyParam);
+      const fileTagsList = fileTags[key] || [];
+
+      const dropdown = document.createElement('div');
+      dropdown.className = 'quick-tag-dropdown';
+
+      dropdown.innerHTML = tagDefs.map(tag => {
+        const isChecked = fileTagsList.includes(tag.name);
+        const escapedTagName = encodeURIComponent(tag.name);
+        return `
+          <label class="quick-tag-item" onclick="event.stopPropagation()">
+            <input type="checkbox" class="quick-tag-checkbox" ${isChecked ? 'checked' : ''} 
+              onchange="toggleQuickTag(event, '${keyParam}', '${escapedTagName}', this.checked)">
+            <span>${tag.emoji} ${tag.name}</span>
+          </label>
+        `;
+      }).join('');
+
+      document.body.appendChild(dropdown);
+      quickTagDropdown = dropdown;
+
+      const rect = event.currentTarget.getBoundingClientRect();
+      dropdown.style.left = `${rect.left + window.scrollX}px`;
+      dropdown.style.top = `${rect.bottom + window.scrollY + 5}px`;
+
+      dropdown.addEventListener('click', (e) => e.stopPropagation());
+    }
+
+    async function toggleQuickTag(event, keyParam, encodedTagName, checked) {
+      event.stopPropagation();
+      const key = dk(keyParam);
+      const tagName = decodeURIComponent(encodedTagName);
+      let currentTags = fileTags[key] || [];
+
+      if (checked) {
+        if (!currentTags.includes(tagName)) {
+          currentTags = [...currentTags, tagName];
+        }
+      } else {
+        currentTags = currentTags.filter(t => t !== tagName);
+      }
+
+      try {
+        const r = await fetch('/api/tags', {
+          method: 'POST',
+          headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key, tags: currentTags })
+        });
+        if (r.ok) {
+          const d = await r.json();
+          fileTags = d.tags;
+          renderTagsInSidebar();
+          renderContent();
+          if (currentNav === 'tag') renderTagFileList();
+          if (contextFile && contextFile.key === key) openContextPanel(contextFile);
+          showToast('标签已更新', 'success');
+        } else {
+          showToast('更新标签失败', 'error');
+        }
+      } catch (e) {
+        showToast('请求异常', 'error');
+      }
+    }
+
+    // Add global click listener to close quick tag dropdown
+    document.addEventListener('click', closeAllQuickTagPickers);
+    document.addEventListener('scroll', closeAllQuickTagPickers, true);
+
     function downloadFile(keyParam) {
+      const k = dk(keyParam);
+      if (k.endsWith('/')) return; // Can't download directory directly
       const a = document.createElement('a');
       a.href     = `/api/download?key=${keyParam}&token=${localStorage.getItem('auth_token')}`;
-      a.download = dk(keyParam);
+      a.download = k;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
 
     function confirmDelete(keyParam) {
       const k = dk(keyParam);
       fileToDelete = k;
-      document.getElementById('confirm-title').textContent = `确认删除「${k}」？`;
-      document.getElementById('confirm-desc').textContent = '此操作将从 Cloudflare R2 存储桶中永久抹除该文件，无法恢复。';
+      if (k.endsWith('/')) {
+        document.getElementById('confirm-title').textContent = `确认删除文件夹「${k}」？`;
+        document.getElementById('confirm-desc').textContent = '此操作将从 Cloudflare R2 存储桶中永久抹除该文件夹及其内部的所有文件，且无法恢复！';
+      } else {
+        document.getElementById('confirm-title').textContent = `确认删除「${k}」？`;
+        document.getElementById('confirm-desc').textContent = '此操作将从 Cloudflare R2 存储桶中永久抹除该文件，无法恢复。';
+      }
       document.getElementById('confirm-modal').classList.add('active');
       document.getElementById('confirm-ok-btn').onclick = async () => {
         closeConfirmModal();
         try {
           const r = await fetch(`/api/delete?key=${ek(k)}`, { method:'DELETE', headers:getHeaders() });
-          if (r.ok) { showToast(`「${k}」已删除`, 'success'); await loadFiles(); closeContextPanel(); clearSelection(); }
+          if (r.ok) { showToast(k.endsWith('/') ? `文件夹「${k}」及其子文件已删除` : `「${k}」已删除`, 'success'); await loadFiles(); closeContextPanel(); clearSelection(); }
           else showToast('删除失败','error');
         } catch(e){ showToast('请求异常: '+e.message,'error'); }
       };
