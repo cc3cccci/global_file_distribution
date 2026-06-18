@@ -349,6 +349,52 @@ export default {
         }));
       }
 
+      // 路由：获取所有文件的标签映射
+      if (pathname === '/api/tags' && request.method === 'GET') {
+        const tags = await getFileTags(env);
+        return corsResponse(new Response(JSON.stringify(tags), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      // 路由：更新单个文件的标签（POST body: { key, tags: ["重要", "工作"] }）
+      if (pathname === '/api/tags' && request.method === 'POST') {
+        const { key, tags } = await request.json();
+        if (!key) {
+          return corsResponse(new Response('Missing file key', { status: 400 }));
+        }
+        let allTags = await getFileTags(env);
+        if (!tags || tags.length === 0) {
+          delete allTags[key];
+        } else {
+          allTags[key] = tags;
+        }
+        await saveFileTags(env, allTags);
+        return corsResponse(new Response(JSON.stringify({ success: true, tags: allTags }), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      // 路由：获取标签定义列表
+      if (pathname === '/api/tag-defs' && request.method === 'GET') {
+        const defs = await getTagDefs(env);
+        return corsResponse(new Response(JSON.stringify(defs), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      // 路由：保存标签定义列表
+      if (pathname === '/api/tag-defs' && request.method === 'POST') {
+        const defs = await request.json();
+        if (!Array.isArray(defs)) {
+          return corsResponse(new Response('Invalid format', { status: 400 }));
+        }
+        await saveTagDefs(env, defs);
+        return corsResponse(new Response(JSON.stringify({ success: true, defs }), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
       // 默认 404
       return corsResponse(new Response('Not Found', { status: 404 }));
 
@@ -377,6 +423,53 @@ async function getPublicFiles(env) {
 // 保存公开文件列表
 async function savePublicFiles(env, list) {
   await env.BUCKET.put('.config/public_files.json', JSON.stringify(list), {
+    httpMetadata: { contentType: 'application/json' }
+  });
+}
+
+// 获取文件标签映射 { "filename": ["重要", "工作"] }
+async function getFileTags(env) {
+  try {
+    const object = await env.BUCKET.get('.config/file_tags.json');
+    if (!object) return {};
+    return await object.json();
+  } catch (e) {
+    console.error('Failed to get file tags:', e.message);
+    return {};
+  }
+}
+
+// 保存文件标签映射
+async function saveFileTags(env, tags) {
+  await env.BUCKET.put('.config/file_tags.json', JSON.stringify(tags), {
+    httpMetadata: { contentType: 'application/json' }
+  });
+}
+
+// 获取标签定义（含颜色）
+async function getTagDefs(env) {
+  const defaults = [
+    { name: '重要', color: '#ef4444', emoji: '🔴', builtin: true },
+    { name: '工作', color: '#f59e0b', emoji: '🟡', builtin: true },
+    { name: '生活', color: '#22c55e', emoji: '🟢', builtin: true },
+    { name: '临时', color: '#3b82f6', emoji: '🔵', builtin: true },
+    { name: '收藏', color: '#a855f7', emoji: '🟣', builtin: true },
+  ];
+  try {
+    const object = await env.BUCKET.get('.config/tag_defs.json');
+    if (!object) {
+      await saveTagDefs(env, defaults);
+      return defaults;
+    }
+    return await object.json();
+  } catch (e) {
+    return defaults;
+  }
+}
+
+// 保存标签定义
+async function saveTagDefs(env, defs) {
+  await env.BUCKET.put('.config/tag_defs.json', JSON.stringify(defs), {
     httpMetadata: { contentType: 'application/json' }
   });
 }

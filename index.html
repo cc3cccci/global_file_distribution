@@ -874,6 +874,121 @@
     .sidebar-overlay.on { display: block; }
 
     /* =============================================
+       TAG STYLES (iOS-style multi-color)
+       ============================================= */
+    /* Tag chip displayed inline next to filename */
+    .tag-chip {
+      display: inline-flex; align-items: center; gap: 0.2rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 20px;
+      font-size: 0.65rem; font-weight: 600;
+      white-space: nowrap; flex-shrink: 0;
+      border: 1px solid;
+      transition: all 0.15s;
+    }
+    .tag-chip-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%; flex-shrink: 0;
+    }
+    .tag-chips-row {
+      display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.2rem;
+    }
+
+    /* Sidebar tag nav items */
+    .tag-nav-item {
+      display: flex; align-items: center; gap: 0.55rem;
+      width: calc(100% - 1rem);
+      margin: 0.05rem 0.5rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem; font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent; border: none; border-left: 2px solid transparent;
+      cursor: pointer; text-align: left;
+      transition: all 0.15s;
+      overflow: hidden;
+    }
+    .tag-nav-item:hover { background: var(--sidebar-hover-bg); color: var(--text-primary); }
+    .tag-nav-item.active {
+      font-weight: 600; border-left-width: 2px; border-left-style: solid;
+    }
+    .tag-nav-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+      box-shadow: 0 0 4px currentColor;
+    }
+    .tag-nav-count {
+      margin-left: auto; font-size: 0.68rem;
+      opacity: 0.6; background: var(--sidebar-active-bg);
+      padding: 0 0.35rem; border-radius: 10px;
+      flex-shrink: 0;
+    }
+
+    /* Tag management in sidebar header */
+    .tags-section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.6rem 1.1rem 0.2rem;
+    }
+    .tags-section-label {
+      font-size: 0.68rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-secondary); opacity: 0.6;
+    }
+    .tag-mgmt-btn {
+      background: transparent; border: none;
+      color: var(--text-secondary); cursor: pointer;
+      font-size: 0.68rem; padding: 0.1rem 0.35rem;
+      border-radius: 4px; transition: all 0.15s;
+    }
+    .tag-mgmt-btn:hover { color: var(--accent-gold); background: var(--sidebar-active-bg); }
+
+    /* Tag modal */
+    .tag-modal {
+      max-width: 480px;
+    }
+    .tag-picker-wrap {
+      display: flex; flex-wrap: wrap; gap: 0.45rem;
+      margin: 0.5rem 0 1rem;
+    }
+    .tag-picker-item {
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px; border: 1.5px solid;
+      font-size: 0.8rem; font-weight: 500;
+      cursor: pointer; transition: all 0.16s;
+      user-select: none;
+    }
+    .tag-picker-item.selected {
+      color: #fff !important;
+    }
+    .tag-picker-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Custom tag creation row */
+    .tag-create-row {
+      display: flex; gap: 0.4rem; align-items: center;
+      flex-wrap: wrap; margin-top: 0.5rem;
+    }
+    .tag-color-swatches {
+      display: flex; gap: 0.3rem; flex-wrap: wrap;
+    }
+    .tag-swatch {
+      width: 18px; height: 18px; border-radius: 50%;
+      cursor: pointer; border: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .tag-swatch.active { border-color: var(--text-primary); transform: scale(1.2); }
+
+    /* Tags view content area */
+    .tag-view-hero {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .tag-view-badge {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+
+    /* =============================================
        ANIMATIONS
        ============================================= */
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
@@ -987,7 +1102,7 @@
       <div class="sidebar-section-label">功能区</div>
 
       <!-- Navigation -->
-      <nav class="sidebar-nav">
+      <nav class="sidebar-nav" id="sidebar-nav">
         <button class="nav-item active" data-nav="all" onclick="setNavView('all')">
           <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           全部文件
@@ -1000,6 +1115,16 @@
           <svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
           GitHub 订阅
         </button>
+
+        <!-- Tags section divider -->
+        <div class="sidebar-divider" style="margin:0.5rem 0.85rem 0.2rem"></div>
+        <div class="tags-section-header">
+          <span class="tags-section-label">标签</span>
+          <button class="tag-mgmt-btn" onclick="openTagMgmtModal()" title="管理标签">+ 管理</button>
+        </div>
+
+        <!-- Tag nav items (rendered dynamically) -->
+        <div id="tag-nav-list"></div>
       </nav>
 
       <div class="sidebar-divider"></div>
@@ -1104,6 +1229,32 @@
             <div id="file-grid-body" class="grid-container"></div>
           </div>
 
+        </div>
+
+        <!-- ===== VIEW: TAG FILTER ===== -->
+        <div id="view-tag" class="view-panel">
+          <div class="tag-view-hero">
+            <div class="tag-view-badge" id="tag-view-badge"></div>
+            <div>
+              <div class="view-page-title" id="tag-view-title">标签文件</div>
+              <div class="view-page-desc" id="tag-view-desc" style="margin:0">带有此标签的文件</div>
+            </div>
+          </div>
+          <div class="file-table-wrap">
+            <table class="file-table">
+              <thead>
+                <tr>
+                  <th class="col-chk"><input type="checkbox" id="tag-select-all" onchange="toggleSelectAll(this)"></th>
+                  <th>文件名</th>
+                  <th class="col-size">大小</th>
+                  <th class="col-date">修改时间</th>
+                  <th class="col-status">状态</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="tag-file-list-body"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- ===== VIEW: PUBLIC SHARED ===== -->
@@ -1260,6 +1411,45 @@
     </div>
   </div>
 
+  <!-- ===== TAG MANAGEMENT MODAL ===== -->
+  <div class="modal-overlay" id="tag-mgmt-modal">
+    <div class="modal tag-modal">
+      <div class="modal-title">🏷️ 标签管理</div>
+      <div class="modal-desc">管理已有标签或创建自定义标签（内置标签无法删除）</div>
+
+      <!-- Existing tags list -->
+      <div id="tag-mgmt-list" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1rem;"></div>
+
+      <!-- Create new tag -->
+      <div style="border-top:1px solid var(--panel-border);padding-top:0.85rem;">
+        <div style="font-size:0.78rem;font-weight:600;margin-bottom:0.5rem;color:var(--text-secondary)">创建自定义标签</div>
+        <div class="tag-create-row">
+          <input type="text" id="new-tag-name" class="form-input" placeholder="标签名称" style="flex:1;min-width:90px;">
+          <div class="tag-color-swatches" id="tag-color-swatches"></div>
+          <button class="btn btn-secondary" onclick="createCustomTag()" style="padding:0.45rem 0.85rem;font-size:0.78rem;">添加</button>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:1.25rem;">
+        <button class="btn" onclick="closeTagMgmtModal()">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAG PICKER MODAL (for file tagging) ===== -->
+  <div class="modal-overlay" id="tag-picker-modal">
+    <div class="modal tag-modal">
+      <div class="modal-title" id="tag-picker-title">为文件打标签</div>
+      <div class="modal-desc" id="tag-picker-filename" style="font-weight:500;color:var(--accent-gold);margin-bottom:0.3rem;"></div>
+      <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.75rem;">可选择多个标签，再次点击取消</div>
+      <div class="tag-picker-wrap" id="tag-picker-items"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeTagPickerModal()">取消</button>
+        <button class="btn" onclick="saveFileTagsFromPicker()">保存</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== TOAST CONTAINER ===== -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -1278,8 +1468,334 @@
     let pubModalKey    = null;
     let contextFile    = null;
     let currentView    = localStorage.getItem('fileView') || 'list'; // list | grid
-    let currentNav     = 'all'; // all | shared | sync
+    let currentNav     = 'all'; // all | shared | sync | tag
     let dragCount      = 0;
+
+    // ============================================================
+    // TAG STATE
+    // ============================================================
+    let tagDefs   = [];  // [{ name, color, emoji, builtin }]
+    let fileTags  = {};  // { 'filename': ['重要', '工作'] }
+    let activeTagFilter  = null;  // currently viewed tag name
+    let tagPickerFile    = null;  // file being tagged
+    let tagPickerSelected = new Set();  // selections in picker modal
+    let newTagColor = '#ef4444';  // selected color for new tag
+
+    const TAG_COLOR_PALETTE = [
+      '#ef4444','#f97316','#f59e0b','#22c55e',
+      '#14b8a6','#3b82f6','#8b5cf6','#ec4899','#78716c'
+    ];
+
+    // ============================================================
+    // TAG FUNCTIONS
+    // ============================================================
+
+    async function loadTagData() {
+      try {
+        const [defsR, tagsR] = await Promise.all([
+          fetch('/api/tag-defs', { headers: getHeaders() }),
+          fetch('/api/tags',     { headers: getHeaders() })
+        ]);
+        if (defsR.ok) tagDefs  = await defsR.json();
+        if (tagsR.ok) fileTags = await tagsR.json();
+        renderTagsInSidebar();
+      } catch(e) { console.error('Tag load failed:', e); }
+    }
+
+    function getTagDef(name) {
+      return tagDefs.find(t => t.name === name) || { name, color: '#8a7e6e', emoji: '🏷️' };
+    }
+
+    function renderTagsInSidebar() {
+      const container = document.getElementById('tag-nav-list');
+      if (!container) return;
+
+      // Count files per tag
+      const counts = {};
+      for (const tags of Object.values(fileTags)) {
+        for (const t of tags) { counts[t] = (counts[t] || 0) + 1; }
+      }
+
+      container.innerHTML = tagDefs.map(tag => {
+        const isActive = currentNav === 'tag' && activeTagFilter === tag.name;
+        const count = counts[tag.name] || 0;
+        return `<button class="tag-nav-item ${isActive ? 'active' : ''}"
+          style="${isActive ? `border-left-color:${tag.color};color:${tag.color};background:${tag.color}18` : ''}"
+          onclick="setTagView('${encodeURIComponent(tag.name)}')"
+          title="${tag.name} (${count} 个文件)">
+          <span class="tag-nav-dot" style="background:${tag.color};box-shadow:0 0 5px ${tag.color}80"></span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tag.name}</span>
+          <span class="tag-nav-count">${count}</span>
+        </button>`;
+      }).join('');
+    }
+
+    function setTagView(encodedName) {
+      activeTagFilter = decodeURIComponent(encodedName);
+      currentNav = 'tag';
+
+      // Update sidebar nav active state
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      renderTagsInSidebar(); // re-render with active state
+
+      // Show tag view panel
+      document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
+      document.getElementById('view-tag').classList.add('active');
+
+      // Update breadcrumb
+      const def = getTagDef(activeTagFilter);
+      document.getElementById('breadcrumb-label').textContent = activeTagFilter;
+      document.getElementById('file-count-badge').style.display = '';
+
+      // Update tag view hero
+      document.getElementById('tag-view-badge').innerHTML =
+        `<span style="font-size:1.3rem">${def.emoji}</span>`;
+      document.getElementById('tag-view-badge').style.background = def.color + '22';
+      document.getElementById('tag-view-title').textContent = activeTagFilter;
+      document.getElementById('tag-view-desc').textContent = `共 ${getFilesForTag(activeTagFilter).length} 个文件带有此标签`;
+
+      // Hide search when in tag view (reuse topbar search)
+      document.getElementById('search-input').style.display = '';
+
+      renderTagFileList();
+      closeContextPanel();
+      clearSelection();
+      if (window.innerWidth <= 800) closeSidebar();
+    }
+
+    function getFilesForTag(tagName) {
+      const keys = Object.entries(fileTags)
+        .filter(([k, tags]) => tags.includes(tagName))
+        .map(([k]) => k);
+      return allFiles.filter(f => keys.includes(f.key));
+    }
+
+    function renderTagFileList() {
+      if (currentNav !== 'tag' || !activeTagFilter) return;
+      const q = document.getElementById('search-input').value.toLowerCase().trim();
+      const files = getFilesForTag(activeTagFilter).filter(f => f.key.toLowerCase().includes(q));
+      document.getElementById('file-count-badge').textContent = files.length + ' 个';
+
+      const tbody = document.getElementById('tag-file-list-body');
+      if (!tbody) return;
+
+      if (!files.length) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
+          <div class="empty-title">此标签下暂无文件</div>
+          <div class="empty-desc">在文件列表中点击 🏷️ 为文件添加标签</div>
+        </div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = files.map(f => buildFileRow(f)).join('');
+    }
+
+    // Build a file row HTML (reusable for both list view and tag view)
+    function buildFileRow(f) {
+      const sel = selectedFiles.has(f.key);
+      const pub = publicFiles.includes(f.key);
+      const tags = fileTags[f.key] || [];
+      const k = ek(f.key);
+      const tagsHtml = tags.map(t => {
+        const def = getTagDef(t);
+        return `<span class="tag-chip" style="color:${def.color};border-color:${def.color}55;background:${def.color}15">
+          <span class="tag-chip-dot" style="background:${def.color}"></span>${t}
+        </span>`;
+      }).join('');
+
+      return `<tr class="file-row ${sel?'selected':''}" onclick="handleRowClick(event,'${k}')">
+        <td class="col-chk" onclick="event.stopPropagation()">
+          <input type="checkbox" ${sel?'checked':''} onchange="toggleSelectFile('${k}',this.checked)">
+        </td>
+        <td>
+          <div class="fname-cell">
+            ${getFileIcon(f.key, 28)}
+            <div style="min-width:0">
+              <div class="fname-text" title="${f.key}">${f.key}</div>
+              ${tagsHtml ? `<div class="tag-chips-row">${tagsHtml}</div>` : ''}
+            </div>
+          </div>
+        </td>
+        <td class="col-size" style="color:var(--text-secondary);white-space:nowrap">${formatBytes(f.size)}</td>
+        <td class="col-date" style="color:var(--text-secondary);font-size:0.78rem;white-space:nowrap">${formatDate(f.uploaded)}</td>
+        <td class="col-status">
+          ${pub
+            ? `<span class="badge badge-public">🌐 公开</span>`
+            : `<span class="badge badge-private">🔒 私有</span>`}
+        </td>
+        <td onclick="event.stopPropagation()">
+          <div class="row-actions">
+            <button class="act-btn" onclick="openTagPickerModal('${k}')" title="打标签" style="color:var(--accent-gold)">
+              <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            </button>
+            <button class="act-btn dl" onclick="downloadFile('${k}')" title="下载">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <button class="act-btn sh" onclick="shareFile('${k}')" title="生成10分钟签名分享链接">
+              <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
+            <button class="act-btn gl ${pub?'on':''}" onclick="openPublicModal('${k}')" title="永久公开链接">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+            </button>
+            <button class="act-btn del" onclick="confirmDelete('${k}')" title="删除">
+              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    }
+
+    // TAG PICKER MODAL
+    function openTagPickerModal(keyParam) {
+      tagPickerFile = dk(keyParam);
+      tagPickerSelected = new Set(fileTags[tagPickerFile] || []);
+      renderTagPickerItems();
+      const file = allFiles.find(f => f.key === tagPickerFile);
+      document.getElementById('tag-picker-filename').textContent = tagPickerFile;
+      document.getElementById('tag-picker-title').textContent = '为文件打标签';
+      document.getElementById('tag-picker-modal').classList.add('active');
+    }
+
+    function renderTagPickerItems() {
+      const wrap = document.getElementById('tag-picker-items');
+      if (!wrap) return;
+      wrap.innerHTML = tagDefs.map(tag => {
+        const sel = tagPickerSelected.has(tag.name);
+        return `<div class="tag-picker-item"
+          style="border-color:${tag.color};color:${sel ? '#fff' : tag.color};background:${sel ? tag.color : tag.color+'18'}"
+          onclick="toggleTagPickerItem('${encodeURIComponent(tag.name)}')">
+          <span class="tag-picker-dot" style="background:${sel ? '#fff' : tag.color}"></span>
+          ${tag.emoji} ${tag.name}
+          ${sel ? ' ✓' : ''}
+        </div>`;
+      }).join('');
+    }
+
+    function toggleTagPickerItem(encodedName) {
+      const name = decodeURIComponent(encodedName);
+      tagPickerSelected.has(name) ? tagPickerSelected.delete(name) : tagPickerSelected.add(name);
+      renderTagPickerItems();
+    }
+
+    async function saveFileTagsFromPicker() {
+      if (!tagPickerFile) return;
+      const tags = [...tagPickerSelected];
+      try {
+        const r = await fetch('/api/tags', {
+          method: 'POST',
+          headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: tagPickerFile, tags })
+        });
+        if (r.ok) {
+          const d = await r.json();
+          fileTags = d.tags;
+          renderTagsInSidebar();
+          renderContent();
+          if (currentNav === 'tag') renderTagFileList();
+          if (contextFile && contextFile.key === tagPickerFile) openContextPanel(contextFile);
+          showToast(`「${tagPickerFile}」标签已更新`, 'success');
+        } else {
+          showToast('保存失败', 'error');
+        }
+      } catch(e) { showToast('请求异常', 'error'); }
+      closeTagPickerModal();
+    }
+
+    function closeTagPickerModal() {
+      document.getElementById('tag-picker-modal').classList.remove('active');
+      tagPickerFile = null;
+    }
+
+    // TAG MANAGEMENT MODAL
+    function openTagMgmtModal() {
+      renderTagMgmtList();
+      renderTagColorSwatches();
+      document.getElementById('tag-mgmt-modal').classList.add('active');
+    }
+
+    function closeTagMgmtModal() {
+      document.getElementById('tag-mgmt-modal').classList.remove('active');
+    }
+
+    function renderTagMgmtList() {
+      const container = document.getElementById('tag-mgmt-list');
+      if (!container) return;
+      container.innerHTML = tagDefs.map((tag, i) => {
+        return `<div style="display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.6rem;background:${tag.color}18;border:1.5px solid ${tag.color}55;border-radius:20px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${tag.color};flex-shrink:0"></span>
+          <span style="font-size:0.8rem;font-weight:600;color:${tag.color}">${tag.emoji} ${tag.name}</span>
+          ${!tag.builtin ? `<button onclick="deleteCustomTag(${i})" title="删除" style="background:transparent;border:none;color:${tag.color};cursor:pointer;padding:0 0.1rem;font-size:0.85rem;opacity:0.6;margin-left:0.2rem;">✕</button>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    function renderTagColorSwatches() {
+      const container = document.getElementById('tag-color-swatches');
+      if (!container) return;
+      container.innerHTML = TAG_COLOR_PALETTE.map(c =>
+        `<div class="tag-swatch ${c === newTagColor ? 'active' : ''}" style="background:${c}" onclick="selectTagColor('${c}')"></div>`
+      ).join('');
+    }
+
+    function selectTagColor(color) {
+      newTagColor = color;
+      renderTagColorSwatches();
+    }
+
+    async function createCustomTag() {
+      const name = document.getElementById('new-tag-name').value.trim();
+      if (!name) { showToast('请输入标签名称', 'error'); return; }
+      if (tagDefs.find(t => t.name === name)) { showToast('标签已存在', 'error'); return; }
+
+      // Pick an emoji based on color
+      const emojiMap = {
+        '#ef4444':'🔴','#f97316':'🟠','#f59e0b':'🟡','#22c55e':'🟢',
+        '#14b8a6':'🔵','#3b82f6':'🔵','#8b5cf6':'🟣','#ec4899':'🩷','#78716c':'⚫'
+      };
+      const emoji = emojiMap[newTagColor] || '🏷️';
+
+      const newTag = { name, color: newTagColor, emoji, builtin: false };
+      tagDefs.push(newTag);
+
+      try {
+        const r = await fetch('/api/tag-defs', {
+          method: 'POST',
+          headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(tagDefs)
+        });
+        if (r.ok) {
+          document.getElementById('new-tag-name').value = '';
+          renderTagMgmtList();
+          renderTagsInSidebar();
+          showToast(`标签「${name}」已创建`, 'success');
+        } else {
+          tagDefs.pop();
+          showToast('创建失败', 'error');
+        }
+      } catch(e) { tagDefs.pop(); showToast('请求异常', 'error'); }
+    }
+
+    async function deleteCustomTag(idx) {
+      const tag = tagDefs[idx];
+      if (!tag || tag.builtin) return;
+      tagDefs.splice(idx, 1);
+
+      try {
+        const r = await fetch('/api/tag-defs', {
+          method: 'POST',
+          headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(tagDefs)
+        });
+        if (r.ok) {
+          renderTagMgmtList();
+          renderTagsInSidebar();
+          showToast(`标签「${tag.name}」已删除`, 'success');
+        } else {
+          tagDefs.splice(idx, 0, tag);
+          showToast('删除失败', 'error');
+        }
+      } catch(e) { tagDefs.splice(idx, 0, tag); showToast('请求异常', 'error'); }
+    }
 
     // ============================================================
     // FILE TYPE ICONS
@@ -1407,7 +1923,7 @@
     // INIT DASHBOARD
     // ============================================================
     async function initDashboard() {
-      await Promise.all([loadFiles(), loadSyncList()]);
+      await Promise.all([loadFiles(), loadSyncList(), loadTagData()]);
       // Restore view
       if (currentView !== 'list') setView(currentView);
     }
@@ -1448,11 +1964,14 @@
     // ============================================================
     function setNavView(name) {
       currentNav = name;
+      activeTagFilter = null; // reset tag filter when navigating to other views
 
       // Update sidebar nav active state
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tag-nav-item').forEach(el => el.classList.remove('active'));
       const navEl = document.querySelector(`[data-nav="${name}"]`);
       if (navEl) navEl.classList.add('active');
+      renderTagsInSidebar();
 
       // Show/hide view panels
       document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
@@ -1524,53 +2043,14 @@
               <polyline points="13 2 13 9 20 9"/>
             </svg>
             <div class="empty-title">暂无文件</div>
-            <div class="empty-desc">点击左侧「上传文件」按钮或将文件拖拽至此处</div>
+            <div class="empty-desc">点击左侧「上传文件」按鈕或将文件拖拽至此处</div>
           </div>
         </td></tr>`;
         return;
       }
 
-      tbody.innerHTML = files.map(f => {
-        const sel = selectedFiles.has(f.key);
-        const pub = publicFiles.includes(f.key);
-        const k   = ek(f.key);
-        return `<tr class="file-row ${sel?'selected':''}" onclick="handleRowClick(event,'${k}')">
-          <td class="col-chk" onclick="event.stopPropagation()">
-            <input type="checkbox" ${sel?'checked':''} onchange="toggleSelectFile('${k}',this.checked)">
-          </td>
-          <td>
-            <div class="fname-cell">
-              ${getFileIcon(f.key, 28)}
-              <div>
-                <div class="fname-text" title="${f.key}">${f.key}</div>
-              </div>
-            </div>
-          </td>
-          <td class="col-size" style="color:var(--text-secondary);white-space:nowrap">${formatBytes(f.size)}</td>
-          <td class="col-date" style="color:var(--text-secondary);font-size:0.78rem;white-space:nowrap">${formatDate(f.uploaded)}</td>
-          <td class="col-status">
-            ${pub
-              ? `<span class="badge badge-public">🌐 公开</span>`
-              : `<span class="badge badge-private">🔒 私有</span>`}
-          </td>
-          <td onclick="event.stopPropagation()">
-            <div class="row-actions">
-              <button class="act-btn dl" onclick="downloadFile('${k}')" title="下载">
-                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              </button>
-              <button class="act-btn sh" onclick="shareFile('${k}')" title="生成10分钟签名分享链接">
-                <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-              </button>
-              <button class="act-btn gl ${pub?'on':''}" onclick="openPublicModal('${k}')" title="永久公开链接">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-              </button>
-              <button class="act-btn del" onclick="confirmDelete('${k}')" title="删除">
-                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </button>
-            </div>
-          </td>
-        </tr>`;
-      }).join('');
+      // Reuse buildFileRow to include tag chips
+      tbody.innerHTML = files.map(f => buildFileRow(f)).join('');
     }
 
     function renderGridView(files) {
@@ -1688,6 +2168,17 @@
       const pub   = publicFiles.includes(file.key);
       const k     = ek(file.key);
       const url   = `${location.origin}/f/${k}`;
+      const tags  = fileTags[file.key] || [];
+
+      // Build tag chips for context panel
+      const tagChipsHtml = tags.length
+        ? tags.map(t => {
+            const def = getTagDef(t);
+            return `<span class="tag-chip" style="color:${def.color};border-color:${def.color}55;background:${def.color}15">
+              <span class="tag-chip-dot" style="background:${def.color}"></span>${t}
+            </span>`;
+          }).join('')
+        : `<span style="font-size:0.75rem;color:var(--text-secondary)">暂无标签</span>`;
 
       body.innerHTML = `
         <div class="panel-icon-lg">${getFileIcon(file.key, 64)}</div>
@@ -1709,6 +2200,10 @@
             <span class="prop-label">公开状态</span>
             <span class="prop-val">${pub?'<span style="color:var(--accent-emerald)">🌐 公开</span>':'<span style="color:var(--text-secondary)">🔒 私有</span>'}</span>
           </div>
+          <div class="panel-prop" style="flex-direction:column;align-items:flex-start;gap:0.4rem">
+            <span class="prop-label">标签</span>
+            <div style="display:flex;flex-wrap:wrap;gap:0.25rem;align-items:center">${tagChipsHtml}</div>
+          </div>
           ${pub ? `<div class="panel-prop" style="flex-direction:column;align-items:flex-start;gap:0.3rem">
             <span class="prop-label">公开直链</span>
             <input class="panel-public-url" type="text" value="${url}" readonly onclick="this.select()">
@@ -1716,13 +2211,17 @@
         </div>
         <div class="panel-divider"></div>
         <div class="panel-actions">
+          <button class="panel-btn gold" onclick="openTagPickerModal('${k}')">
+            <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            ${tags.length ? '管理标签' : '添加标签'}
+          </button>
           <button class="panel-btn" onclick="downloadFile('${k}')">
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             下载文件
           </button>
           <button class="panel-btn" onclick="shareFile('${k}')">
             <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            生成 10 分钟分享链接
+            生成10 分钟分享链接
           </button>
           <button class="panel-btn ${pub?'':'gold'}" onclick="openPublicModal('${k}')">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
