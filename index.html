@@ -1528,6 +1528,26 @@
     </div>
   </div>
 
+  <!-- ===== MOVE FILE MODAL ===== -->
+  <div class="modal-overlay" id="move-file-modal">
+    <div class="modal">
+      <div class="modal-title">移动 / 重命名文件</div>
+      <div class="modal-desc" id="move-file-desc" style="margin-bottom: 1rem; color:var(--text-secondary);"></div>
+      <div style="margin-bottom:0.75rem; text-align:left;">
+        <label style="font-size:0.75rem;color:var(--text-secondary);display:block;margin-bottom:0.25rem;">目标文件夹</label>
+        <select class="form-input" id="move-target-folder" style="background:var(--input-bg);color:var(--text-primary);border:1px solid var(--panel-border);outline:none;text-align:left;letter-spacing:normal;"></select>
+      </div>
+      <div style="margin-bottom:1.25rem; text-align:left;">
+        <label style="font-size:0.75rem;color:var(--text-secondary);display:block;margin-bottom:0.25rem;">文件名</label>
+        <input type="text" class="form-input" id="move-target-name" placeholder="文件名" style="text-align:left;letter-spacing:normal;">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeMoveFileModal()">取消</button>
+        <button class="btn" onclick="submitMoveFile()">确定</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== TOAST CONTAINER ===== -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -1550,6 +1570,7 @@
     let dragCount      = 0;
     let currentPath    = ''; // virtual folder path (e.g., 'docs/')
     let quickTagDropdown = null; // tracking the quick tag dropdown element
+    let moveSrcKey     = null; // the key of the file being moved/renamed
 
     // ============================================================
     // TAG STATE
@@ -1593,7 +1614,9 @@
       // Count files per tag
       const counts = {};
       for (const tags of Object.values(fileTags)) {
-        for (const t of tags) { counts[t] = (counts[t] || 0) + 1; }
+        if (Array.isArray(tags)) {
+          for (const t of tags) { counts[t] = (counts[t] || 0) + 1; }
+        }
       }
 
       container.innerHTML = tagDefs.map(tag => {
@@ -1627,8 +1650,10 @@
 
       // Update breadcrumb
       const def = getTagDef(activeTagFilter);
-      document.getElementById('breadcrumb-label').textContent = activeTagFilter;
-      document.getElementById('file-count-badge').style.display = '';
+      const bLabel = document.getElementById('breadcrumb-label');
+      if (bLabel) bLabel.textContent = activeTagFilter;
+      const bBadge = document.getElementById('file-count-badge');
+      if (bBadge) bBadge.style.display = '';
 
       // Update tag view hero
       document.getElementById('tag-view-badge').innerHTML =
@@ -1648,7 +1673,7 @@
 
     function getFilesForTag(tagName) {
       const keys = Object.entries(fileTags)
-        .filter(([k, tags]) => tags.includes(tagName))
+        .filter(([k, tags]) => Array.isArray(tags) && tags.includes(tagName))
         .map(([k]) => k);
       return allFiles.filter(f => keys.includes(f.key));
     }
@@ -2098,7 +2123,8 @@
 
       // Breadcrumb
       const labels = { all:'全部文件', shared:'公开分享', sync:'GitHub 订阅' };
-      document.getElementById('breadcrumb-label').textContent = labels[name]||'全部文件';
+      const bLabel = document.getElementById('breadcrumb-label');
+      if (bLabel) bLabel.textContent = labels[name]||'全部文件';
 
       // File count badge: only show on all-files view
       document.getElementById('file-count-badge').style.display = name==='all' ? '' : 'none';
@@ -2142,6 +2168,10 @@
     // RENDER ALL FILES VIEW
     // ============================================================
     function renderContent() {
+      if (currentNav === 'tag') {
+        renderTagFileList();
+        return;
+      }
       const q = document.getElementById('search-input').value.toLowerCase().trim();
       let displayItems = [];
 
@@ -2387,6 +2417,10 @@
           <button class="panel-btn" onclick="downloadFile('${k}')">
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             下载文件
+          </button>
+          <button class="panel-btn" onclick="openMoveFileModal('${k}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            移动 / 重命名
           </button>
           <button class="panel-btn" onclick="shareFile('${k}')">
             <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -2706,7 +2740,7 @@
       const container = document.querySelector('.topbar-breadcrumb');
       if (!container) return;
       
-      let html = `<span onclick="navigateToPath('')" style="cursor:pointer;color:var(--text-primary)">全部文件</span>`;
+      let html = `<span id="breadcrumb-label" onclick="navigateToPath('')" style="cursor:pointer;color:var(--text-primary)">全部文件</span>`;
       if (currentPath) {
         const parts = currentPath.split('/').filter(Boolean);
         let cumulativePath = '';
@@ -2844,6 +2878,84 @@
       a.href     = `/api/download?key=${keyParam}&token=${localStorage.getItem('auth_token')}`;
       a.download = k;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    // ============================================================
+    // MOVE & RENAME FILE
+    // ============================================================
+    function openMoveFileModal(keyParam) {
+      const fileKey = dk(keyParam);
+      const file = allFiles.find(f => f.key === fileKey);
+      if (!file) return;
+
+      const folders = new Set();
+      allFiles.forEach(f => {
+        const key = f.key;
+        const parts = key.split('/');
+        if (parts.length > 1) {
+          let path = '';
+          for (let i = 0; i < parts.length - 1; i++) {
+            path += parts[i] + '/';
+            folders.add(path);
+          }
+        }
+      });
+
+      const select = document.getElementById('move-target-folder');
+      select.innerHTML = '<option value="">(根目录 /)</option>' + 
+        [...folders].sort().map(f => `<option value="${f}">${f}</option>`).join('');
+
+      const lastSlash = fileKey.lastIndexOf('/');
+      const currentFolder = lastSlash === -1 ? '' : fileKey.slice(0, lastSlash + 1);
+      const fileName = lastSlash === -1 ? fileKey : fileKey.slice(lastSlash + 1);
+
+      select.value = currentFolder;
+      document.getElementById('move-target-name').value = fileName;
+      document.getElementById('move-file-desc').textContent = `正在移动: ${fileName}`;
+
+      moveSrcKey = fileKey;
+      document.getElementById('move-file-modal').classList.add('active');
+    }
+
+    function closeMoveFileModal() {
+      document.getElementById('move-file-modal').classList.remove('active');
+      moveSrcKey = null;
+    }
+
+    async function submitMoveFile() {
+      if (!moveSrcKey) return;
+      const targetFolder = document.getElementById('move-target-folder').value;
+      const targetName = document.getElementById('move-target-name').value.trim();
+      if (!targetName) {
+        showToast('文件名不能为空', 'error');
+        return;
+      }
+
+      const targetKey = targetFolder + targetName;
+      if (targetKey === moveSrcKey) {
+        showToast('目标路径与原路径相同', 'info');
+        closeMoveFileModal();
+        return;
+      }
+
+      try {
+        const r = await fetch('/api/rename', {
+          method: 'POST',
+          headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fromKey: moveSrcKey, toKey: targetKey })
+        });
+
+        if (r.ok) {
+          showToast('文件移动成功', 'success');
+          closeMoveFileModal();
+          await loadFiles();
+          closeContextPanel();
+        } else {
+          showToast('移动文件失败', 'error');
+        }
+      } catch (e) {
+        showToast('请求异常: ' + e.message, 'error');
+      }
     }
 
     function confirmDelete(keyParam) {

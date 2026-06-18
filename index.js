@@ -322,6 +322,45 @@ export default {
         }));
       }
 
+      // 路由：移动与重命名文件
+      if (pathname === '/api/rename' && request.method === 'POST') {
+        const { fromKey, toKey } = await request.json();
+        if (!fromKey || !toKey) {
+          return corsResponse(new Response('Missing parameters', { status: 400 }));
+        }
+
+        const object = await env.BUCKET.get(fromKey);
+        if (!object) {
+          return corsResponse(new Response('Source file not found', { status: 404 }));
+        }
+
+        await env.BUCKET.put(toKey, object.body, {
+          httpMetadata: object.httpMetadata,
+          customMetadata: object.customMetadata
+        });
+
+        await env.BUCKET.delete(fromKey);
+
+        // 同步标签映射
+        let allTags = await getFileTags(env);
+        if (allTags[fromKey]) {
+          allTags[toKey] = allTags[fromKey];
+          delete allTags[fromKey];
+          await saveFileTags(env, allTags);
+        }
+
+        // 同步公开分享状态
+        let publicFilesList = await getPublicFiles(env);
+        if (publicFilesList.includes(fromKey)) {
+          publicFilesList = publicFilesList.map(item => item === fromKey ? toKey : item);
+          await savePublicFiles(env, publicFilesList);
+        }
+
+        return corsResponse(new Response(JSON.stringify({ success: true }), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
       // 路由：获取同步配置
       if (pathname === '/api/sync-config' && request.method === 'GET') {
         const configObject = await env.BUCKET.get('.config/sync_list.json');
