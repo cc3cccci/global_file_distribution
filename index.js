@@ -410,6 +410,81 @@ export default {
         }));
       }
 
+      // 路由：获取某订阅的历史版本列表
+      if (pathname === '/api/sync-history' && request.method === 'GET') {
+        const key = url.searchParams.get('key');
+        if (!key) {
+          return corsResponse(new Response('Missing subscription key', { status: 400 }));
+        }
+        
+        const historyPrefix = `.history/${key}/`;
+        const listResult = await env.BUCKET.list({ prefix: historyPrefix });
+        
+        const historyList = [];
+        for (const obj of listResult.objects) {
+          const headObj = await env.BUCKET.head(obj.key);
+          historyList.push({
+            key: obj.key,
+            size: obj.size,
+            uploaded: obj.uploaded.toISOString(),
+            pinned: headObj && headObj.customMetadata ? headObj.customMetadata.pinned === 'true' : false
+          });
+        }
+        
+        historyList.sort((a, b) => new Date(b.uploaded).getTime() - new Date(a.uploaded).getTime());
+
+        return corsResponse(new Response(JSON.stringify(historyList), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      // 路由：删除指定历史版本
+      if (pathname === '/api/sync-history' && request.method === 'DELETE') {
+        const { historyKey } = await request.json();
+        if (!historyKey || !historyKey.startsWith('.history/')) {
+          return corsResponse(new Response('Invalid history key', { status: 400 }));
+        }
+        
+        const headObj = await env.BUCKET.head(historyKey);
+        if (headObj && headObj.customMetadata && headObj.customMetadata.pinned === 'true') {
+          return corsResponse(new Response('Cannot delete a pinned version. Unpin it first.', { status: 400 }));
+        }
+
+        await env.BUCKET.delete(historyKey);
+        return corsResponse(new Response(JSON.stringify({ success: true }), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      // 路由：锁定/解锁历史版本
+      if (pathname === '/api/sync-history/pin' && request.method === 'POST') {
+        const { historyKey, pinned } = await request.json();
+        if (!historyKey || !historyKey.startsWith('.history/')) {
+          return corsResponse(new Response('Invalid history key', { status: 400 }));
+        }
+
+        const object = await env.BUCKET.get(historyKey);
+        if (!object) {
+          return corsResponse(new Response('History version not found', { status: 404 }));
+        }
+
+        const customMetadata = { ...(object.customMetadata || {}) };
+        if (pinned) {
+          customMetadata.pinned = 'true';
+        } else {
+          delete customMetadata.pinned;
+        }
+
+        await env.BUCKET.put(historyKey, object.body, {
+          httpMetadata: object.httpMetadata,
+          customMetadata: customMetadata
+        });
+
+        return corsResponse(new Response(JSON.stringify({ success: true }), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
       // 路由：获取所有文件的标签映射
       if (pathname === '/api/tags' && request.method === 'GET') {
         const tags = await getFileTags(env);
@@ -608,6 +683,7 @@ async function verifySignature(key, expires, signature, secret) {
 }
 
 // 执行 GitHub 自动同步拉取逻辑
+// 执行 GitHub 自动同步拉取逻辑
 async function performGithubSync(env, singleKey = null) {
   let syncList = [];
   try {
@@ -618,7 +694,9 @@ async function performGithubSync(env, singleKey = null) {
       syncList = [
         {
           url: 'https://github.com/v2fly/geoip/releases/latest/download/geoip.dat',
-          key: 'geoip.dat'
+          key: 'geoip.dat',
+          versioning: false,
+          maxVersions: 3
         }
       ];
       await env.BUCKET.put('.config/sync_list.json', JSON.stringify(syncList), {
@@ -642,24 +720,105 @@ async function performGithubSync(env, singleKey = null) {
   for (const item of syncList) {
     try {
       if (!item.url || !item.key) continue;
-      
-      const res = await fetch(item.url, {
-        headers: {
-          'User-Agent': 'AetherStorage-Sync-Agent/1.0'
+
+      // 1. 获取主文件的 R2 元数据，获取 remote_etag / remote_last_modified 做条件更新判定
+      const existingObj = await env.BUCKET.head(item.key);
+      const headers = {
+        'User-Agent': 'AetherStorage-Sync-Agent/1.0'
+      };
+
+      if (existingObj && existingObj.customMetadata) {
+        if (existingObj.customMetadata.remote_etag) {
+          headers['If-None-Match'] = existingObj.customMetadata.remote_etag;
         }
-      });
-      
+        if (existingObj.customMetadata.remote_last_modified) {
+          headers['If-Modified-Since'] = existingObj.customMetadata.remote_last_modified;
+        }
+      }
+
+      const res = await fetch(item.url, { headers });
+
+      if (res.status === 304) {
+        results.push({ key: item.key, status: 'not_modified' });
+        continue;
+      }
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
-      // 流式写入 R2 存储桶，防止 Workers 内存溢出
+
+      const remoteEtag = res.headers.get('ETag') || '';
+      const remoteLastModified = res.headers.get('Last-Modified') || '';
+
+      // 2. 归档历史版本（开启 versioning 且存在旧文件时）
+      if (item.versioning && existingObj) {
+        const keyParts = item.key.split('/');
+        const filename = keyParts.pop();
+        const folderPrefix = keyParts.length > 0 ? keyParts.join('/') + '/' : '';
+        
+        const dotIdx = filename.lastIndexOf('.');
+        const baseName = dotIdx !== -1 ? filename.substring(0, dotIdx) : filename;
+        const ext = dotIdx !== -1 ? filename.substring(dotIdx) : '';
+        
+        const oldSyncTime = existingObj.customMetadata?.sync_time || new Date().toISOString();
+        const formattedTime = oldSyncTime.replace(/[-T:]/g, '_').substring(0, 19);
+        
+        const historyKey = `.history/${item.key}/${folderPrefix}${baseName}_v${formattedTime}${ext}`;
+
+        const oldFullObj = await env.BUCKET.get(item.key);
+        if (oldFullObj) {
+          await env.BUCKET.put(historyKey, oldFullObj.body, {
+            httpMetadata: oldFullObj.httpMetadata,
+            customMetadata: {
+              ...(oldFullObj.customMetadata || {}),
+              archived_at: new Date().toISOString()
+            }
+          });
+        }
+      }
+
+      // 3. 流式写入主对象
       await env.BUCKET.put(item.key, res.body, {
         httpMetadata: {
           contentType: res.headers.get('Content-Type') || 'application/octet-stream'
+        },
+        customMetadata: {
+          remote_etag: remoteEtag,
+          remote_last_modified: remoteLastModified,
+          sync_time: new Date().toISOString()
         }
       });
-      
+
+      // 4. 超额历史清理（若开启了版本控制）
+      if (item.versioning) {
+        const maxV = Number(item.maxVersions) || 3;
+        const historyPrefix = `.history/${item.key}/`;
+        const objectsList = await env.BUCKET.list({ prefix: historyPrefix });
+        
+        const unpinnedVersions = [];
+        for (const obj of objectsList.objects) {
+          const headObj = await env.BUCKET.head(obj.key);
+          if (headObj) {
+            const isPinned = headObj.customMetadata?.pinned === 'true';
+            if (!isPinned) {
+              unpinnedVersions.push({
+                key: obj.key,
+                uploaded: obj.uploaded
+              });
+            }
+          }
+        }
+
+        unpinnedVersions.sort((a, b) => b.uploaded.getTime() - a.uploaded.getTime());
+
+        if (unpinnedVersions.length > maxV) {
+          const toDelete = unpinnedVersions.slice(maxV);
+          for (const dObj of toDelete) {
+            await env.BUCKET.delete(dObj.key);
+          }
+        }
+      }
+
       results.push({ key: item.key, status: 'success' });
     } catch (err) {
       console.error(`Sync failed for ${item.key}:`, err.message);
