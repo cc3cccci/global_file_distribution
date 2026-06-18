@@ -485,6 +485,36 @@ export default {
         }));
       }
 
+      // 路由：测试同步订阅链接
+      if (pathname === '/api/sync-test' && request.method === 'POST') {
+        const { url } = await request.json();
+        if (!url) {
+          return corsResponse(new Response('Missing URL', { status: 400 }));
+        }
+        try {
+          const res = await fetch(url, {
+            method: 'GET',
+            headers: { 'User-Agent': 'AetherStorage-Sync-Agent/1.0' }
+          });
+          return corsResponse(new Response(JSON.stringify({
+            ok: res.ok,
+            status: res.status,
+            statusText: res.statusText,
+            contentType: res.headers.get('Content-Type') || 'unknown',
+            contentLength: res.headers.get('Content-Length') || 'unknown'
+          }), {
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        } catch (e) {
+          return corsResponse(new Response(JSON.stringify({
+            ok: false,
+            error: e.message
+          }), {
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+      }
+
       // 路由：获取所有文件的标签映射
       if (pathname === '/api/tags' && request.method === 'GET') {
         const tags = await getFileTags(env);

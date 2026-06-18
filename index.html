@@ -1355,7 +1355,7 @@
               </div>
               <div style="border-top:1px solid var(--panel-border);padding-top:0.75rem;display:flex;flex-direction:column;gap:0.5rem;">
                 <input type="text" id="sync-new-key" class="form-input" placeholder="保存名称 (例: geoip.dat)">
-                <input type="text" id="sync-new-url" class="form-input" placeholder="GitHub Release 最新下载 URL">
+                <input type="text" id="sync-new-url" class="form-input" oninput="handleSyncUrlInput(this.value)" placeholder="GitHub Release 最新下载 URL">
                 <div style="font-size:0.7rem;color:var(--text-secondary);line-height:1.4;margin-top:-0.15rem;">
                   💡 获取提示：GitHub Release 最新下载链接格式通常为：<br>
                   <code style="color:var(--accent-gold);word-break:break-all;">https://github.com/用户名/项目名/releases/latest/download/文件名</code> (如 geoip.dat)
@@ -1369,8 +1369,11 @@
                   <input type="number" id="sync-new-max-versions" class="form-input" value="3" min="1" max="100" style="width:60px;padding:0.25rem 0.4rem;font-size:0.78rem;">
                   <span>个</span>
                 </div>
-                <div style="margin-top:0.25rem;">
-                  <button class="btn btn-secondary" onclick="addSyncItem()" style="font-size:0.8rem;padding:0.45rem 1rem;">
+                <div style="margin-top:0.25rem; display:flex; gap:0.5rem;">
+                  <button class="btn btn-secondary" id="sync-test-btn" onclick="testSyncLink()" style="font-size:0.8rem;padding:0.45rem 1rem;">
+                    测试链接 ⚡️
+                  </button>
+                  <button class="btn" onclick="addSyncItem()" style="font-size:0.8rem;padding:0.45rem 1rem; display:flex; align-items:center; gap:0.25rem;">
                     <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     添加订阅
                   </button>
@@ -3420,6 +3423,65 @@
         }
       } catch (e) {
         showToast('请求异常: ' + e.message, 'error');
+      }
+    }
+
+    function handleSyncUrlInput(val) {
+      const githubPattern = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/releases\/download\/([^/]+)\/(.+)$/;
+      const match = val.trim().match(githubPattern);
+      if (match) {
+        const owner = match[1];
+        const repo = match[2];
+        const tag = match[3];
+        const filename = match[4];
+        
+        const latestUrl = `https://github.com/${owner}/${repo}/releases/latest/download/${filename}`;
+        document.getElementById('sync-new-url').value = latestUrl;
+        
+        const keyInput = document.getElementById('sync-new-key');
+        if (!keyInput.value.trim()) {
+          keyInput.value = filename;
+        }
+        
+        showToast('已自动将单次下载链接转换为 Latest 订阅格式，并提取保存名称', 'success');
+      }
+    }
+
+    async function testSyncLink() {
+      const url = document.getElementById('sync-new-url').value.trim();
+      if (!url) {
+        showToast('请输入 URL 链接再进行测试', 'error');
+        return;
+      }
+      
+      const btn = document.getElementById('sync-test-btn');
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '测试中... ⏳';
+      
+      try {
+        const r = await fetch('/api/sync-test', {
+          method: 'POST',
+          headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        
+        if (r.ok) {
+          const data = await r.json();
+          if (data.ok) {
+            const sizeStr = data.contentLength !== 'unknown' ? formatBytes(parseInt(data.contentLength)) : '未知';
+            showToast(`连接成功！类型: ${data.contentType}, 大小: ${sizeStr}`, 'success');
+          } else {
+            showToast(`连接失败: ${data.status} ${data.statusText || ''}`, 'error');
+          }
+        } else {
+          showToast('测试接口请求异常', 'error');
+        }
+      } catch (e) {
+        showToast('请求异常: ' + e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
       }
     }
 
