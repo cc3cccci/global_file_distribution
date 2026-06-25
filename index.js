@@ -141,6 +141,120 @@ export default {
         });
       }
 
+      // 路由：VPS 推送 SSL 证书（使用独立 Token，与管理员密码分离）
+      // POST /api/cert-push
+      // Header:  X-Cert-Token: <CERT_PUSH_TOKEN>
+      // Body:    { domain, fullchain?, privkey?, cert? }  —— PEM 字符串，传哪个存哪个
+      if (pathname === '/api/cert-push' && request.method === 'POST') {
+        const token = request.headers.get('X-Cert-Token');
+        if (!token || token !== env.CERT_PUSH_TOKEN) {
+          return corsResponse(new Response(JSON.stringify({ error: 'Unauthorized: invalid cert push token' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+
+        let body;
+        try {
+          body = await request.json();
+        } catch (e) {
+          return corsResponse(new Response('Invalid JSON body', { status: 400 }));
+        }
+
+        const { domain, fullchain, privkey, cert } = body;
+        if (!domain || typeof domain !== 'string' || domain.trim() === '') {
+          return corsResponse(new Response('Missing or invalid domain field', { status: 400 }));
+        }
+
+        // 简单校验 domain 格式，防止路径穿越
+        const safeDomain = domain.trim().replace(/[^a-zA-Z0-9.\-_*]/g, '');
+        if (safeDomain !== domain.trim()) {
+          return corsResponse(new Response('Invalid domain: contains illegal characters', { status: 400 }));
+        }
+
+        const pushedAt = new Date().toISOString();
+        const results = [];
+
+        const uploads = [
+          { content: fullchain, filename: 'fullchain.pem' },
+          { content: privkey,   filename: 'privkey.pem'   },
+          { content: cert,      filename: 'cert.pem'       },
+        ];
+
+        for (const { content, filename } of uploads) {
+          if (content == null || content === '') continue;
+          if (typeof content !== 'string') {
+            results.push({ filename, status: 'skipped', reason: 'content must be a PEM string' });
+            continue;
+          }
+
+          const key = `certs/${safeDomain}/${filename}`;
+          await env.BUCKET.put(key, content, {
+            httpMetadata: { contentType: 'application/x-pem-file' },
+            customMetadata: {
+              domain: safeDomain,
+              pushed_at: pushedAt,
+              pushed_by: 'vps-hook',
+            }
+          });
+          results.push({ key, status: 'ok' });
+        }
+
+        if (results.filter(r => r.status === 'ok').length === 0) {
+          return corsResponse(new Response(JSON.stringify({
+            success: false,
+            error: 'No certificate content provided (fullchain / privkey / cert are all empty)',
+            results
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+
+        return corsResponse(new Response(JSON.stringify({ success: true, domain: safeDomain, pushed_at: pushedAt, results }), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      // 路由：下游 VPS 拉取 SSL 证书（复用 CERT_PUSH_TOKEN，限制只读 certs/ 目录）
+      // GET /api/cert-pull?domain=<domain>&file=<filename>
+      // Header: X-Cert-Token: <CERT_PUSH_TOKEN>
+      if (pathname === '/api/cert-pull' && request.method === 'GET') {
+        const token = request.headers.get('X-Cert-Token');
+        if (!token || token !== env.CERT_PUSH_TOKEN) {
+          return corsResponse(new Response('Unauthorized', { status: 401 }));
+        }
+
+        const domain = url.searchParams.get('domain');
+        const file = url.searchParams.get('file');
+
+        // 白名单：只允许下载这三个标准证书文件
+        const allowedFiles = ['fullchain.pem', 'privkey.pem', 'cert.pem'];
+        if (!domain || !file || !allowedFiles.includes(file)) {
+          return corsResponse(new Response('Invalid parameters', { status: 400 }));
+        }
+
+        // domain 安全校验（防路径穿越）
+        const safeDomain = domain.trim().replace(/[^a-zA-Z0-9.\-_*]/g, '');
+        if (safeDomain !== domain.trim()) {
+          return corsResponse(new Response('Invalid domain', { status: 400 }));
+        }
+
+        const key = `certs/${safeDomain}/${file}`;
+        const object = await env.BUCKET.get(key);
+        if (!object) {
+          return corsResponse(new Response(`Certificate not found: ${key}`, { status: 404 }));
+        }
+
+        return corsResponse(new Response(object.body, {
+          headers: {
+            'Content-Type': 'application/x-pem-file',
+            'Content-Disposition': `attachment; filename="${file}"`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+          }
+        }));
+      }
+
       // 除下载接口外，其他 API 都必须使用 Authorization 头校验登录状态
       if (!verifyAdminAuth(request, env)) {
         return corsResponse(new Response(JSON.stringify({ error: 'Unauthorized' }), {

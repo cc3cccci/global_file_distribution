@@ -4,12 +4,20 @@ compatibility_date = "2024-03-01"
 
 # 允许直接在 index.js 中以文本形式导入 index.html 文件
 rules = [
-  { type = "Text", globs = ["**/*.html"] }
+  { type = "Text", globs = ["**/*.html"], fallthrough = false }
 ]
 
 [vars]
 # 允许请求的 Referer 匹配前缀。留空则表示不校验防盗链（推荐留空，需要时填入如 https://yourdomain.com）
 ALLOWED_REFERER = ""
+
+# ---- Secrets（通过 wrangler secret 命令设置，不要写在此文件中）----
+# AUTH_PASSWORD     —— 网盘管理员登录密码
+# SECRET_KEY        —— 预签名链接的 HMAC 密钥
+# CERT_PUSH_TOKEN   —— VPS 推送 SSL 证书专用 Token（与管理员密码分离）
+#                      生成命令：openssl rand -hex 32
+#                      设置命令：npx wrangler secret put CERT_PUSH_TOKEN
+
 
 [[r2_buckets]]
 binding = "BUCKET"
