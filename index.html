@@ -935,6 +935,26 @@
       z-index: 44; display: none;
     }
 
+    /* Right-click context menu */
+    .ctx-menu {
+      position: fixed; z-index: 90; min-width: 172px;
+      background: var(--modal-bg); backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border); border-radius: 10px;
+      padding: 0.35rem; box-shadow: 0 10px 34px var(--modal-shadow);
+      display: none; flex-direction: column; gap: 2px;
+    }
+    .ctx-menu.on { display: flex; }
+    .ctx-item {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.45rem 0.6rem; border-radius: 6px;
+      font-size: 0.78rem; color: var(--text-primary); cursor: pointer;
+      white-space: nowrap; background: transparent; border: none;
+      text-align: left; width: 100%;
+    }
+    .ctx-item:hover { background: var(--sidebar-hover-bg); }
+    .ctx-item.danger { color: var(--accent-rose); }
+    .ctx-sep { height: 1px; background: var(--panel-border); margin: 0.25rem 0; }
+
     /* =============================================
        TAG STYLES (iOS-style multi-color)
        ============================================= */
@@ -1236,6 +1256,9 @@
 
   <!-- ===== DETAIL PANEL BACKDROP (mobile bottom sheet) ===== -->
   <div id="context-overlay" class="context-overlay" onclick="closeContextPanel()"></div>
+
+  <!-- ===== RIGHT-CLICK CONTEXT MENU ===== -->
+  <div id="ctx-menu" class="ctx-menu"></div>
 
   <!-- ===== APP SHELL ===== -->
   <div class="app-shell" id="app-shell">
@@ -1565,7 +1588,7 @@
       <div class="modal-desc" id="pub-modal-desc">永久公开直链，供软路由等设备无密码直接拉取：</div>
       <div class="pub-url-row" style="margin-bottom:1.25rem">
         <input type="text" id="pub-url-input" class="pub-url-input" readonly onclick="this.select()">
-        <button class="act-btn sh" onclick="copyPubUrl()" title="复制链接">
+        <button class="act-btn sh" onclick="copyPubUrl(event)" title="复制链接">
           <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
       </div>
@@ -1776,6 +1799,7 @@
       closeContextPanel();
       clearSelection();
       saveNavState();
+      pushNavHistory();
       if (window.innerWidth <= 800) closeSidebar();
     }
 
@@ -1815,7 +1839,7 @@
       const sel = selectedFiles.has(f.key);
 
       if (isFolder) {
-        return `<tr class="file-row" onclick="handleRowClick(event,'${k}')">
+        return `<tr class="file-row" onclick="handleRowClick(event,'${k}')" oncontextmenu="showContextMenu(event,'${k}')">
           <td class="col-chk" onclick="event.stopPropagation()">
             <!-- No checkbox for folders -->
           </td>
@@ -1849,7 +1873,7 @@
         </span>`;
       }).join('');
 
-      return `<tr class="file-row ${sel?'selected':''}" onclick="handleRowClick(event,'${k}')">
+      return `<tr class="file-row ${sel?'selected':''}" onclick="handleRowClick(event,'${k}')" oncontextmenu="showContextMenu(event,'${k}')">
         <td class="col-chk" onclick="event.stopPropagation()">
           <input type="checkbox" ${sel?'checked':''} onchange="toggleSelectFile('${k}',this.checked)">
         </td>
@@ -2362,9 +2386,13 @@
 
     function updateStorage() {
       const total = allFiles.reduce((s,f)=>s+f.size,0);
-      document.getElementById('storage-text').textContent = formatBytes(total)+' 已使用';
-      const pct = Math.min((total/(10*1024*1024*1024))*100, 100);
-      document.getElementById('storage-fill').style.width = Math.max(pct, 2)+'%';
+      const fileCount = allFiles.filter(f => !f.key.endsWith('/')).length;
+      // R2 按量计费、无固定容量上限，因此不再显示误导性的 "X% / 10GB" 百分比，
+      // 改为展示真实已用大小与文件数量。
+      document.getElementById('storage-text').textContent = `${formatBytes(total)} · ${fileCount} 个文件`;
+      const fill = document.getElementById('storage-fill');
+      fill.style.width = total > 0 ? '100%' : '0%';
+      fill.parentElement.title = 'Cloudflare R2 按量计费，无固定容量上限';
     }
 
     // ============================================================
@@ -2409,6 +2437,7 @@
       if (name === 'shared') renderSharedView();
 
       saveNavState();
+      pushNavHistory();
 
       // Close sidebar on mobile
       if (window.innerWidth <= 800) closeSidebar();
@@ -2649,7 +2678,7 @@
         const sel = selectedFiles.has(f.key);
 
         if (isFolder) {
-          return `<div class="grid-card" onclick="handleGridClick(event,'${k}')">
+          return `<div class="grid-card" onclick="handleGridClick(event,'${k}')" oncontextmenu="showContextMenu(event,'${k}')">
             <div class="grid-icon" style="margin-top: 0.5rem;">${getFileIcon(f.key, 48)}</div>
             <div class="grid-name" style="font-weight:600;margin-top:0.4rem;" title="${name}">${name}</div>
             <div class="grid-size">-</div>
@@ -2670,7 +2699,7 @@
           </span>`;
         }).join('');
 
-        return `<div class="grid-card ${sel?'selected':''}" onclick="handleGridClick(event,'${k}')">
+        return `<div class="grid-card ${sel?'selected':''}" onclick="handleGridClick(event,'${k}')" oncontextmenu="showContextMenu(event,'${k}')">
           <input type="checkbox" class="grid-chk" ${sel?'checked':''} onclick="event.stopPropagation()" onchange="toggleSelectFile('${k}',this.checked)">
           <div class="grid-icon">${getFileIcon(f.key, 48)}</div>
           <div class="grid-name" title="${name}">${name}</div>
@@ -2925,11 +2954,17 @@
     // ============================================================
     async function batchDownload() {
       if (!selectedFiles.size) return;
-      showToast(`开始下载 ${selectedFiles.size} 个文件...`, 'info');
-      for (const k of selectedFiles) {
-        await new Promise(r => setTimeout(r, 250));
+      const keys = [...selectedFiles];
+      const total = keys.length;
+      showToast(`开始下载 ${total} 个文件（浏览器可能会请求允许多文件下载）`, 'info');
+      let done = 0;
+      for (const k of keys) {
         downloadFile(ek(k));
+        done++;
+        // spacing avoids the browser silently dropping rapid successive downloads
+        if (done < total) await new Promise(r => setTimeout(r, 600));
       }
+      showToast(`已触发 ${total} 个文件的下载`, 'success');
     }
 
     async function batchShare() {
@@ -3295,6 +3330,7 @@
       clearSelection();
       renderContent();
       saveNavState();
+      pushNavHistory();
     }
 
     function renderBreadcrumbs() {
@@ -3589,10 +3625,20 @@
       pubModalKey = null;
     }
 
-    function copyPubUrl() {
+    // Briefly show a "已复制 ✓" state on a button after a successful copy.
+    function flashCopied(btn) {
+      if (!btn) return;
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✓';
+      btn.classList.add('gl');
+      setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('gl'); }, 1200);
+    }
+
+    function copyPubUrl(ev) {
       const v = document.getElementById('pub-url-input').value;
       if (v && v !== '（未开启）') {
-        navigator.clipboard.writeText(v).then(()=>showToast('链接已复制','success'));
+        const btn = ev && ev.currentTarget;
+        navigator.clipboard.writeText(v).then(()=>{ showToast('链接已复制','success'); flashCopied(btn); });
       }
     }
 
@@ -3970,16 +4016,108 @@
       }
     }
 
-    // Global Escape closes the top-most open modal, then the context panel,
-    // then the mobile sidebar — matching common desktop expectations.
+    // ============================================================
+    // RIGHT-CLICK CONTEXT MENU
+    // ============================================================
+    let ctxMenuKey = null;
+    function showContextMenu(event, keyParam) {
+      event.preventDefault();
+      const k = dk(keyParam);
+      ctxMenuKey = k;
+      const isFolder = k.endsWith('/');
+      const pub = publicFiles.includes(k);
+      const menu = document.getElementById('ctx-menu');
+      menu.innerHTML = isFolder
+        ? `<button class="ctx-item" onclick="ctxAction('open')">打开文件夹</button>
+           <div class="ctx-sep"></div>
+           <button class="ctx-item danger" onclick="ctxAction('delete')">删除文件夹</button>`
+        : `<button class="ctx-item" onclick="ctxAction('download')">下载</button>
+           <button class="ctx-item" onclick="ctxAction('share')">生成分享链接</button>
+           <button class="ctx-item" onclick="ctxAction('public')">${pub ? '管理公开链接' : '开启公开链接'}</button>
+           <button class="ctx-item" onclick="ctxAction('move')">移动 / 重命名</button>
+           <button class="ctx-item" onclick="ctxAction('tag')">标签</button>
+           <div class="ctx-sep"></div>
+           <button class="ctx-item danger" onclick="ctxAction('delete')">删除</button>`;
+      menu.classList.add('on');
+      const mw = menu.offsetWidth, mh = menu.offsetHeight;
+      let x = event.clientX, y = event.clientY;
+      if (x + mw > window.innerWidth)  x = window.innerWidth  - mw - 8;
+      if (y + mh > window.innerHeight) y = window.innerHeight - mh - 8;
+      menu.style.left = Math.max(4, x) + 'px';
+      menu.style.top  = Math.max(4, y) + 'px';
+    }
+    function hideContextMenu() {
+      const m = document.getElementById('ctx-menu');
+      if (m) m.classList.remove('on');
+    }
+    function ctxAction(action) {
+      const k = ctxMenuKey; hideContextMenu();
+      if (!k) return;
+      const ekk = ek(k);
+      switch (action) {
+        case 'open':     navigateToPath(k); break;
+        case 'download': downloadFile(ekk); break;
+        case 'share':    shareFile(ekk); break;
+        case 'public':   openPublicModal(ekk); break;
+        case 'move':     openMoveFileModal(ekk); break;
+        case 'tag':      openTagPickerModal(ekk); break;
+        case 'delete':   confirmDelete(ekk); break;
+      }
+    }
+    document.addEventListener('click', hideContextMenu);
+    document.addEventListener('scroll', hideContextMenu, true);
+
+    // ============================================================
+    // KEYBOARD SHORTCUTS + Escape handling
+    // ============================================================
+    function isTypingTarget(el) {
+      return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+    }
     document.addEventListener('keydown', e => {
-      if (e.key !== 'Escape') return;
-      const openModals = document.querySelectorAll('.modal-overlay.active');
-      if (openModals.length) { openModals.forEach(m => m.classList.remove('active')); fileToDelete = null; return; }
-      const panel = document.getElementById('context-panel');
-      if (panel && panel.classList.contains('open')) { closeContextPanel(); return; }
-      const sidebar = document.getElementById('sidebar');
-      if (sidebar && sidebar.classList.contains('mobile-open')) { closeSidebar(); return; }
+      if (e.key === 'Escape') {
+        hideContextMenu();
+        const openModals = document.querySelectorAll('.modal-overlay.active');
+        if (openModals.length) { openModals.forEach(m => m.classList.remove('active')); fileToDelete = null; return; }
+        const panel = document.getElementById('context-panel');
+        if (panel && panel.classList.contains('open')) { closeContextPanel(); return; }
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar && sidebar.classList.contains('mobile-open')) { closeSidebar(); return; }
+        return;
+      }
+      if (isTypingTarget(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+      // "/" focuses the search box
+      if (e.key === '/') {
+        const s = document.getElementById('search-input');
+        if (s && s.style.display !== 'none') { e.preventDefault(); s.focus(); }
+        return;
+      }
+      // Delete removes the current selection (guarded by the confirm dialog)
+      if (e.key === 'Delete' && selectedFiles.size) { e.preventDefault(); batchDelete(); }
+    });
+
+    // ============================================================
+    // BROWSER BACK BUTTON — navigate folder/view history
+    // ============================================================
+    let suppressHistory = false;
+    function pushNavHistory() {
+      if (suppressHistory) return;
+      try {
+        history.pushState({ nav: currentNav, path: currentPath, tag: activeTagFilter }, '');
+      } catch {}
+    }
+    window.addEventListener('popstate', e => {
+      const s = e.state;
+      suppressHistory = true;
+      if (s && s.nav === 'tag' && s.tag) {
+        setTagView(encodeURIComponent(s.tag));
+      } else if (s && (s.nav === 'shared' || s.nav === 'sync')) {
+        setNavView(s.nav);
+      } else {
+        if (currentNav !== 'all') setNavView('all');
+        currentPath = (s && s.path) || '';
+        renderContent();
+      }
+      suppressHistory = false;
     });
 
     // ============================================================
