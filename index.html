@@ -1048,182 +1048,6 @@
     }
 
     /* =============================================
-       TOOLBAR CHIPS / SORT
-       ============================================= */
-    .view-toolbar {
-      display: flex; align-items: center; gap: 0.45rem;
-      flex-wrap: wrap; margin-bottom: 0.7rem;
-    }
-    .filter-chip {
-      background: transparent; border: 1px solid var(--btn-border);
-      color: var(--text-secondary); border-radius: 999px;
-      padding: 0.22rem 0.7rem; font-size: 0.75rem; font-weight: 500;
-      transition: all 0.18s;
-    }
-    .filter-chip:hover { border-color: var(--accent-gold); color: var(--text-primary); }
-    .filter-chip.active {
-      background: var(--sidebar-active-bg); border-color: var(--accent-gold);
-      color: var(--accent-gold);
-    }
-    .sort-th { cursor: pointer; user-select: none; white-space: nowrap; }
-    .sort-th:hover { color: var(--accent-gold); }
-    .sort-th .sort-arrow { font-size: 0.65rem; margin-left: 0.2rem; opacity: 0.55; }
-
-    .kbd {
-      display: inline-flex; align-items: center; justify-content: center;
-      min-width: 1.35rem; height: 1.2rem; padding: 0 0.28rem;
-      border: 1px solid var(--btn-border); border-radius: 4px;
-      font-size: 0.65rem; font-family: var(--font-inter); color: var(--text-secondary);
-      background: var(--input-bg);
-    }
-
-    .folder-upload-btn {
-      width: calc(100% - 1.7rem); margin: 0 0.85rem 0.35rem;
-      background: transparent; border: 1px dashed var(--panel-border);
-      color: var(--text-secondary); border-radius: 8px;
-      padding: 0.38rem 0.5rem; font-size: 0.75rem;
-      display: flex; align-items: center; justify-content: center; gap: 0.35rem;
-    }
-    .folder-upload-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
-    .folder-upload-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
-
-    /* =============================================
-       PREVIEW OVERLAY (OpenList / Finder style)
-       ============================================= */
-    .preview-overlay {
-      position: fixed; inset: 0; z-index: 180;
-      background: rgba(4, 3, 2, 0.88);
-      backdrop-filter: blur(10px);
-      display: none; flex-direction: column;
-    }
-    .preview-overlay.open { display: flex; }
-    .preview-top {
-      display: flex; align-items: center; gap: 0.75rem;
-      padding: 0.7rem 1rem; border-bottom: 1px solid var(--panel-border);
-      flex-shrink: 0;
-    }
-    .preview-title {
-      flex: 1; min-width: 0; font-weight: 600;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .preview-stage {
-      flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
-      padding: 1rem; position: relative; overflow: auto;
-    }
-    .preview-stage img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 12px 48px rgba(0,0,0,0.45); }
-    .preview-stage video, .preview-stage audio { max-width: 100%; outline: none; }
-    .preview-stage iframe { width: 100%; height: 100%; border: none; background: #fff; border-radius: 8px; }
-    .preview-code {
-      width: min(960px, 100%); max-height: 100%; overflow: auto;
-      background: rgba(0,0,0,0.45); border: 1px solid var(--panel-border);
-      border-radius: 10px; padding: 1rem 1.1rem; font-size: 0.8rem;
-      line-height: 1.55; white-space: pre-wrap; word-break: break-word;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      color: var(--text-primary);
-    }
-    .preview-nav {
-      position: absolute; top: 50%; transform: translateY(-50%);
-      width: 40px; height: 40px; border-radius: 50%;
-      background: rgba(20,18,14,0.7); border: 1px solid var(--panel-border);
-      color: var(--text-primary); display: flex; align-items: center; justify-content: center;
-    }
-    .preview-nav:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
-    .preview-nav.prev { left: 12px; }
-    .preview-nav.next { right: 12px; }
-    .preview-nav svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
-
-    /* =============================================
-       COMMAND PALETTE
-       ============================================= */
-    .cmdk-overlay {
-      position: fixed; inset: 0; z-index: 190;
-      background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
-      display: none; align-items: flex-start; justify-content: center; padding-top: 14vh;
-    }
-    .cmdk-overlay.open { display: flex; }
-    .cmdk {
-      width: min(560px, calc(100vw - 1.5rem));
-      background: var(--modal-bg); border: 1px solid var(--panel-border);
-      border-radius: 14px; overflow: hidden;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.55);
-    }
-    .cmdk-input {
-      width: 100%; background: transparent; border: none; outline: none;
-      padding: 0.95rem 1.1rem; font-size: 0.95rem; color: var(--text-primary);
-      border-bottom: 1px solid var(--panel-border);
-    }
-    .cmdk-list { max-height: 340px; overflow-y: auto; padding: 0.4rem; }
-    .cmdk-item {
-      display: flex; align-items: center; gap: 0.65rem;
-      width: 100%; text-align: left; background: transparent;
-      border: none; color: var(--text-primary); border-radius: 8px;
-      padding: 0.55rem 0.7rem; font-size: 0.84rem;
-    }
-    .cmdk-item:hover, .cmdk-item.active { background: var(--sidebar-active-bg); }
-    .cmdk-item .hint { margin-left: auto; color: var(--text-secondary); font-size: 0.72rem; }
-    .cmdk-empty { padding: 1.2rem; text-align: center; color: var(--text-secondary); font-size: 0.82rem; }
-
-    /* =============================================
-       SHARE / SNIPPET MODAL
-       ============================================= */
-    .ttl-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.35rem 0 1rem; }
-    .snippet-box {
-      background: var(--input-bg); border: 1px solid var(--panel-border);
-      border-radius: 8px; padding: 0.55rem 0.7rem; font-size: 0.72rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      color: var(--text-secondary); word-break: break-all; margin-bottom: 0.45rem;
-      cursor: pointer;
-    }
-    .snippet-box:hover { border-color: var(--accent-gold); color: var(--text-primary); }
-    .snippet-label { font-size: 0.7rem; color: var(--text-secondary); margin: 0.55rem 0 0.25rem; }
-
-    /* =============================================
-       UPLOAD QUEUE
-       ============================================= */
-    .upload-queue {
-      position: fixed; right: 1rem; bottom: 1rem; z-index: 70;
-      width: min(340px, calc(100vw - 2rem));
-      background: var(--toast-bg); border: 1px solid var(--panel-border);
-      border-radius: 12px; padding: 0.7rem 0.8rem;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none;
-    }
-    .upload-queue.open { display: block; }
-    .uq-item { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; font-size: 0.75rem; }
-    .uq-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .uq-bar { height: 3px; background: var(--panel-border); border-radius: 2px; margin-top: 0.35rem; overflow: hidden; }
-    .uq-bar > div { height: 100%; background: var(--accent-gold); width: 0%; transition: width 0.15s; }
-
-    /* =============================================
-       CERT CARDS / README
-       ============================================= */
-    .cert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }
-    .cert-card {
-      background: var(--grid-card-bg); border: 1px solid var(--panel-border);
-      border-radius: 12px; padding: 0.9rem 1rem;
-    }
-    .cert-card h3 { font-size: 0.92rem; font-family: var(--font-outfit); margin-bottom: 0.25rem; }
-    .cert-meta { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.65rem; }
-    .cert-files { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.7rem; }
-    .cert-file-chip {
-      font-size: 0.7rem; padding: 0.12rem 0.45rem; border-radius: 999px;
-      border: 1px solid rgba(16,185,129,0.35); color: var(--accent-emerald);
-    }
-    .readme-panel {
-      margin-top: 0.9rem; background: var(--panel-bg); border: 1px solid var(--panel-border);
-      border-radius: 12px; padding: 0.9rem 1.1rem; display: none;
-    }
-    .readme-panel h1, .readme-panel h2, .readme-panel h3 { font-family: var(--font-outfit); margin: 0.6rem 0 0.35rem; }
-    .readme-panel p { margin: 0.35rem 0; color: var(--text-secondary); font-size: 0.84rem; }
-    .readme-panel code { background: var(--input-bg); padding: 0.05rem 0.3rem; border-radius: 4px; font-size: 0.78rem; }
-    .readme-panel pre { background: var(--input-bg); padding: 0.7rem; border-radius: 8px; overflow: auto; font-size: 0.78rem; }
-    .readme-panel a { color: var(--accent-gold); }
-
-    .grid-thumb {
-      width: 100%; height: 88px; object-fit: cover; border-radius: 8px;
-      background: rgba(0,0,0,0.2); margin-bottom: 0.35rem;
-    }
-
-    /* =============================================
        ANIMATIONS
        ============================================= */
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
@@ -1337,10 +1161,6 @@
           新文件夹
         </button>
       </div>
-      <button class="folder-upload-btn" onclick="triggerFolderUpload()" title="保留相对路径上传整个目录">
-        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>
-        上传文件夹
-      </button>
 
       <div class="sidebar-section-label">功能区</div>
 
@@ -1357,10 +1177,6 @@
         <button class="nav-item" data-nav="sync" onclick="setNavView('sync')">
           <svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
           GitHub 订阅
-        </button>
-        <button class="nav-item" data-nav="certs" onclick="setNavView('certs')">
-          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          SSL 证书
         </button>
 
         <!-- Tags section divider -->
@@ -1406,17 +1222,10 @@
 
         <div class="topbar-search-wrap">
           <svg class="topbar-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input class="topbar-search" id="search-input" placeholder="搜索文件，或 ⌘K 命令..." oninput="renderContent()">
+          <input class="topbar-search" id="search-input" placeholder="搜索文件名称..." oninput="renderContent()">
         </div>
 
         <div class="topbar-right">
-          <button class="icon-btn" onclick="openCommandPalette()" title="命令面板 (⌘K)">
-            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            ⌘K
-          </button>
-          <button class="icon-btn" onclick="openShortcutsModal()" title="快捷键">
-            <span class="kbd">?</span>
-          </button>
           <button class="view-btn active" id="view-list-btn" onclick="setView('list')" title="列表视图">
             <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           </button>
@@ -1438,9 +1247,8 @@
       <!-- ---- CONTENT AREA ---- -->
       <div class="content-area" id="content-area">
 
-        <!-- Hidden file inputs -->
+        <!-- Hidden file input -->
         <input type="file" id="file-input" style="display:none" onchange="handleFileSelect(event)" multiple>
-        <input type="file" id="folder-input" style="display:none" onchange="handleFolderSelect(event)" webkitdirectory directory multiple>
 
         <!-- Upload Progress Toast (inline) -->
         <div id="upload-progress-card" class="upload-progress-toast" style="display:none">
@@ -1460,15 +1268,6 @@
         <!-- ===== VIEW: ALL FILES ===== -->
         <div id="view-all" class="view-panel active">
 
-          <div class="view-toolbar" id="type-filter-bar">
-            <button class="filter-chip active" data-filter="all" onclick="setTypeFilter('all')">全部</button>
-            <button class="filter-chip" data-filter="image" onclick="setTypeFilter('image')">图片</button>
-            <button class="filter-chip" data-filter="video" onclick="setTypeFilter('video')">视频</button>
-            <button class="filter-chip" data-filter="audio" onclick="setTypeFilter('audio')">音频</button>
-            <button class="filter-chip" data-filter="doc" onclick="setTypeFilter('doc')">文档</button>
-            <button class="filter-chip" data-filter="archive" onclick="setTypeFilter('archive')">压缩包</button>
-          </div>
-
           <!-- LIST VIEW -->
           <div id="list-view" class="file-table-wrap">
             <table class="file-table">
@@ -1477,9 +1276,9 @@
                   <th class="col-chk">
                     <input type="checkbox" id="select-all-chk" onchange="toggleSelectAll(this)">
                   </th>
-                  <th class="sort-th" onclick="toggleSort('name')">文件名<span class="sort-arrow" data-sort="name"></span></th>
-                  <th class="col-size sort-th" onclick="toggleSort('size')">大小<span class="sort-arrow" data-sort="size"></span></th>
-                  <th class="col-date sort-th" onclick="toggleSort('uploaded')">修改时间<span class="sort-arrow" data-sort="uploaded"></span></th>
+                  <th>文件名</th>
+                  <th class="col-size">大小</th>
+                  <th class="col-date">修改时间</th>
                   <th class="col-status">状态</th>
                   <th></th>
                 </tr>
@@ -1491,11 +1290,6 @@
           <!-- GRID VIEW -->
           <div id="grid-view" style="display:none">
             <div id="file-grid-body" class="grid-container"></div>
-          </div>
-
-          <div class="readme-panel" id="readme-panel">
-            <div style="font-size:0.72rem;color:var(--text-secondary);margin-bottom:0.4rem;">README.md</div>
-            <div id="readme-body"></div>
           </div>
 
         </div>
@@ -1609,19 +1403,11 @@
                 系统特性说明
               </div>
               <p>⚡️ <b style="color:var(--text-primary)">无下行流量费</b>：基于 R2 原生设计，下载免带宽出站流量费</p>
-              <p>🔒 <b style="color:var(--text-primary)">弹性时效链</b>：预签名分享链接可设 10 分钟 / 1 小时 / 6 小时 / 1 天 / 7 天</p>
+              <p>🔒 <b style="color:var(--text-primary)">时效安全链</b>：预签名分享链接自带加密鉴权，10 分钟内有效</p>
               <p>🛡️ <b style="color:var(--text-primary)">防盗链保护</b>：非签名直接引用会启动 Referer 检测阻断盗链</p>
               <p>📦 <b style="color:var(--text-primary)">大文件分片</b>：5 MB 块大小多任务分片直传，适应网络不稳定场景</p>
-              <p>👁 <b style="color:var(--text-primary)">在线预览</b>：图片、音视频、PDF、Markdown 与代码可在面板内直接打开</p>
             </div>
           </div>
-        </div>
-
-        <!-- ===== VIEW: SSL CERTS ===== -->
-        <div id="view-certs" class="view-panel">
-          <div class="view-page-title">🔐 SSL 证书分发</div>
-          <div class="view-page-desc">上游 VPS 通过 CERT_PUSH_TOKEN 推送证书后，在此查看各域名最新文件，并复制下游拉取命令</div>
-          <div id="certs-grid" class="cert-grid"></div>
         </div>
 
       </div>
@@ -1691,16 +1477,11 @@
     <div class="modal">
       <div class="modal-title" id="pub-modal-title">公开链接管理</div>
       <div class="modal-desc" id="pub-modal-desc">永久公开直链，供软路由等设备无密码直接拉取：</div>
-      <div class="pub-url-row" style="margin-bottom:0.75rem">
+      <div class="pub-url-row" style="margin-bottom:1.25rem">
         <input type="text" id="pub-url-input" class="pub-url-input" readonly onclick="this.select()">
         <button class="act-btn sh" onclick="copyPubUrl()" title="复制链接">
           <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
-      </div>
-      <div id="pub-snippets" style="display:none">
-        <div class="snippet-label">软路由 / VPS 一键拉取</div>
-        <div class="snippet-box" id="pub-wget" onclick="copyText(this.textContent, 'wget 命令已复制')"></div>
-        <div class="snippet-box" id="pub-curl" onclick="copyText(this.textContent, 'curl 命令已复制')"></div>
       </div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="closePublicModal()">关闭</button>
@@ -1786,91 +1567,6 @@
   <!-- ===== TOAST CONTAINER ===== -->
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- ===== UPLOAD QUEUE ===== -->
-  <div class="upload-queue" id="upload-queue">
-    <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;font-weight:600">
-      <span>上传队列</span>
-      <button class="panel-close" onclick="document.getElementById('upload-queue').classList.remove('open')">✕</button>
-    </div>
-    <div id="upload-queue-list"></div>
-  </div>
-
-  <!-- ===== SHARE MODAL ===== -->
-  <div class="modal-overlay" id="share-modal">
-    <div class="modal" style="max-width:520px">
-      <div class="modal-title">生成时效分享链接</div>
-      <div class="modal-desc" id="share-modal-desc">链接带 HMAC 签名，过期自动失效。适合临时发给他人，无需开启永久公开。</div>
-      <div class="snippet-label">有效期</div>
-      <div class="ttl-row" id="share-ttl-row">
-        <button class="filter-chip active" data-ttl="600" onclick="setShareTtl(600)">10 分钟</button>
-        <button class="filter-chip" data-ttl="3600" onclick="setShareTtl(3600)">1 小时</button>
-        <button class="filter-chip" data-ttl="21600" onclick="setShareTtl(21600)">6 小时</button>
-        <button class="filter-chip" data-ttl="86400" onclick="setShareTtl(86400)">1 天</button>
-        <button class="filter-chip" data-ttl="604800" onclick="setShareTtl(604800)">7 天</button>
-      </div>
-      <div class="pub-url-row" style="margin-bottom:0.65rem">
-        <input type="text" id="share-url-input" class="pub-url-input" readonly placeholder="点击下方按钮生成" onclick="this.select()">
-        <button class="act-btn sh" onclick="copyShareUrl()" title="复制链接">
-          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        </button>
-      </div>
-      <div id="share-snippets" style="display:none">
-        <div class="snippet-box" id="share-wget" onclick="copyText(this.textContent, 'wget 命令已复制')"></div>
-        <div class="snippet-box" id="share-curl" onclick="copyText(this.textContent, 'curl 命令已复制')"></div>
-      </div>
-      <div class="modal-actions" style="margin-top:1rem">
-        <button class="btn btn-secondary" onclick="closeShareModal()">关闭</button>
-        <button class="btn" id="share-gen-btn" onclick="generateShareLink()">生成并复制</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== SHORTCUTS MODAL ===== -->
-  <div class="modal-overlay" id="shortcuts-modal">
-    <div class="modal">
-      <div class="modal-title">键盘快捷键</div>
-      <div class="modal-desc">参考 Linear / Dropbox 的键盘流，尽量不离开键盘完成常用操作。</div>
-      <div style="display:grid;grid-template-columns:auto 1fr;gap:0.45rem 1rem;font-size:0.82rem;margin-bottom:1.2rem">
-        <span><span class="kbd">⌘</span> <span class="kbd">K</span></span><span>命令面板</span>
-        <span><span class="kbd">/</span></span><span>聚焦搜索</span>
-        <span><span class="kbd">U</span></span><span>上传文件</span>
-        <span><span class="kbd">N</span></span><span>新建文件夹</span>
-        <span><span class="kbd">Space</span></span><span>预览当前文件</span>
-        <span><span class="kbd">←</span> <span class="kbd">→</span></span><span>预览上一张 / 下一张</span>
-        <span><span class="kbd">Esc</span></span><span>关闭弹层</span>
-        <span><span class="kbd">?</span></span><span>打开本说明</span>
-      </div>
-      <div class="modal-actions">
-        <button class="btn" onclick="closeShortcutsModal()">知道了</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== COMMAND PALETTE ===== -->
-  <div class="cmdk-overlay" id="cmdk-overlay" onclick="if(event.target===this)closeCommandPalette()">
-    <div class="cmdk">
-      <input class="cmdk-input" id="cmdk-input" placeholder="输入命令或文件名..." oninput="renderCommandPalette()" onkeydown="handleCmdkKey(event)">
-      <div class="cmdk-list" id="cmdk-list"></div>
-    </div>
-  </div>
-
-  <!-- ===== PREVIEW OVERLAY ===== -->
-  <div class="preview-overlay" id="preview-overlay">
-    <div class="preview-top">
-      <div class="preview-title" id="preview-title">预览</div>
-      <button class="btn btn-secondary" id="preview-download-btn" style="padding:0.35rem 0.8rem;font-size:0.78rem">下载</button>
-      <button class="icon-btn" onclick="closePreview()" title="关闭 (Esc)">✕</button>
-    </div>
-    <div class="preview-stage" id="preview-stage">
-      <button class="preview-nav prev" onclick="previewStep(-1)" title="上一张">
-        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <button class="preview-nav next" onclick="previewStep(1)" title="下一张">
-        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-    </div>
-  </div>
-
 
   <script>
     // ============================================================
@@ -1886,22 +1582,11 @@
     let pubModalKey    = null;
     let contextFile    = null;
     let currentView    = localStorage.getItem('fileView') || 'list'; // list | grid
-    let currentNav     = 'all'; // all | shared | sync | tag | certs
+    let currentNav     = 'all'; // all | shared | sync | tag
     let dragCount      = 0;
     let currentPath    = ''; // virtual folder path (e.g., 'docs/')
     let quickTagDropdown = null; // tracking the quick tag dropdown element
     let moveSrcKey     = null; // the key of the file being moved/renamed
-    let typeFilter     = 'all';
-    let sortKey        = localStorage.getItem('sortKey') || 'name';
-    let sortDir        = parseInt(localStorage.getItem('sortDir') || '1', 10);
-    let shareTtl       = 600;
-    let shareModalKey  = null;
-    let previewList    = [];
-    let previewIndex   = 0;
-    let cmdkItems      = [];
-    let cmdkActive     = 0;
-    let uploadTasks    = [];
-    let uploadBusy     = false;
 
     // ============================================================
     // TAG STATE
@@ -2050,7 +1735,7 @@
             </div>
           </td>
           <td class="col-size" style="color:var(--text-secondary);white-space:nowrap">-</td>
-          <td class="col-date" style="color:var(--text-secondary);font-size:0.78rem;white-space:nowrap" title="${formatDate(f.uploaded)}">${formatRelative(f.uploaded)}</td>
+          <td class="col-date" style="color:var(--text-secondary);font-size:0.78rem;white-space:nowrap">${formatDate(f.uploaded)}</td>
           <td class="col-status">-</td>
           <td onclick="event.stopPropagation()">
             <div class="row-actions">
@@ -2071,7 +1756,7 @@
         </span>`;
       }).join('');
 
-      return `<tr class="file-row ${sel?'selected':''}" onclick="handleRowClick(event,'${k}')" ondblclick="handleRowDblClick(event,'${k}')">
+      return `<tr class="file-row ${sel?'selected':''}" onclick="handleRowClick(event,'${k}')">
         <td class="col-chk" onclick="event.stopPropagation()">
           <input type="checkbox" ${sel?'checked':''} onchange="toggleSelectFile('${k}',this.checked)">
         </td>
@@ -2088,7 +1773,7 @@
           </div>
         </td>
         <td class="col-size" style="color:var(--text-secondary);white-space:nowrap">${formatBytes(f.size)}</td>
-        <td class="col-date" style="color:var(--text-secondary);font-size:0.78rem;white-space:nowrap" title="${formatDate(f.uploaded)}">${formatRelative(f.uploaded)}</td>
+        <td class="col-date" style="color:var(--text-secondary);font-size:0.78rem;white-space:nowrap">${formatDate(f.uploaded)}</td>
         <td class="col-status">
           ${pub
             ? `<span class="badge badge-public">🌐 公开</span>`
@@ -2096,16 +1781,13 @@
         </td>
         <td onclick="event.stopPropagation()">
           <div class="row-actions">
-            <button class="act-btn" onclick="openPreview('${k}')" title="预览" ${isPreviewable(f.key) ? '' : 'style="opacity:0.35"'}>
-              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
             <button class="act-btn" onclick="openTagPickerModal('${k}')" title="打标签" style="color:var(--accent-gold)">
               <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             </button>
             <button class="act-btn dl" onclick="downloadFile('${k}')" title="下载">
               <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
-            <button class="act-btn sh" onclick="shareFile('${k}')" title="生成时效分享链接">
+            <button class="act-btn sh" onclick="shareFile('${k}')" title="生成10分钟签名分享链接">
               <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             </button>
             <button class="act-btn gl ${pub?'on':''}" onclick="openPublicModal('${k}')" title="永久公开链接">
@@ -2385,7 +2067,6 @@
     // FILE TYPE ICONS
     // ============================================================
     function getFileType(name) {
-      if (name && name.endsWith('/')) return 'folder';
       const ext = (name.split('.').pop() || '').toLowerCase();
       const map = {
         image:  ['jpg','jpeg','png','gif','webp','svg','bmp','ico','avif','tiff'],
@@ -2403,27 +2084,10 @@
       return 'file';
     }
 
-    function isPreviewable(name) {
-      return ['image','video','audio','pdf','code','text'].includes(getFileType(name));
-    }
-
-    function authFileUrl(key, inline) {
-      const token = localStorage.getItem('auth_token') || '';
-      return `/api/download?key=${ek(key)}&token=${encodeURIComponent(token)}${inline ? '&inline=1' : ''}`;
-    }
-
-    function copyText(text, toastMsg) {
-      if (!text) return;
-      navigator.clipboard.writeText(text)
-        .then(() => showToast(toastMsg || '已复制', 'success'))
-        .catch(() => showToast('复制失败', 'error'));
-    }
-
     function getFileIcon(name, sz = 32) {
       const type = getFileType(name);
       const s = sz;
       const icons = {
-        folder:  `<svg width="${s}" height="${s}" viewBox="0 0 40 40"><rect x="1" y="1" width="38" height="38" rx="8" fill="rgba(212,175,55,.1)" stroke="rgba(212,175,55,.4)" stroke-width="1.5"/><path d="M8 16 V12 a2 2 0 0 1 2-2 h8 l3 3 h11 a2 2 0 0 1 2 2 v13 a2 2 0 0 1-2 2 H10 a2 2 0 0 1-2-2 z" fill="rgba(212,175,55,.22)" stroke="rgba(212,175,55,.65)" stroke-width="1.5"/></svg>`,
         image:   `<svg width="${s}" height="${s}" viewBox="0 0 40 40"><rect x="1" y="1" width="38" height="38" rx="8" fill="rgba(16,185,129,.12)" stroke="rgba(16,185,129,.45)" stroke-width="1.5"/><circle cx="14" cy="14" r="4" fill="rgba(16,185,129,.5)"/><path d="M2 28 L13 18 L22 27 L28 20 L38 30" stroke="rgba(16,185,129,.65)" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>`,
         video:   `<svg width="${s}" height="${s}" viewBox="0 0 40 40"><rect x="1" y="1" width="38" height="38" rx="8" fill="rgba(139,92,246,.12)" stroke="rgba(139,92,246,.45)" stroke-width="1.5"/><polygon points="15,11 33,20 15,29" fill="rgba(139,92,246,.65)"/></svg>`,
         audio:   `<svg width="${s}" height="${s}" viewBox="0 0 40 40"><rect x="1" y="1" width="38" height="38" rx="8" fill="rgba(236,72,153,.12)" stroke="rgba(236,72,153,.45)" stroke-width="1.5"/><path d="M16 28V12l16-3v16" stroke="rgba(236,72,153,.65)" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="11" cy="28" r="5" stroke="rgba(236,72,153,.65)" stroke-width="2" fill="none"/><circle cx="27" cy="25" r="5" stroke="rgba(236,72,153,.65)" stroke-width="2" fill="none"/></svg>`,
@@ -2472,22 +2136,6 @@
         year:'numeric', month:'2-digit', day:'2-digit',
         hour:'2-digit', minute:'2-digit'
       });
-    }
-
-    function formatRelative(d) {
-      if (!d) return '-';
-      const t = new Date(d).getTime();
-      const diff = Date.now() - t;
-      if (Number.isNaN(t)) return '-';
-      if (diff < 45000) return '刚刚';
-      if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前';
-      if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前';
-      if (diff < 7 * 86400000) return Math.floor(diff / 86400000) + ' 天前';
-      return formatDate(d);
-    }
-
-    function escapeHtml(s) {
-      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
 
     function ek(k){ return encodeURIComponent(k); }
@@ -2542,8 +2190,8 @@
     // ============================================================
     async function initDashboard() {
       await Promise.all([loadFiles(), loadSyncList(), loadTagData()]);
+      // Restore view
       if (currentView !== 'list') setView(currentView);
-      updateSortArrows();
     }
 
     // ============================================================
@@ -2600,7 +2248,7 @@
       if (panel) panel.classList.add('active');
 
       // Breadcrumb
-      const labels = { all:'全部文件', shared:'公开分享', sync:'GitHub 订阅', certs:'SSL 证书' };
+      const labels = { all:'全部文件', shared:'公开分享', sync:'GitHub 订阅' };
       const bLabel = document.getElementById('breadcrumb-label');
       if (bLabel) bLabel.textContent = labels[name]||'全部文件';
 
@@ -2608,7 +2256,7 @@
       document.getElementById('file-count-badge').style.display = name==='all' ? '' : 'none';
 
       // Hide search bar on non-all views
-      document.getElementById('search-input').style.display = (name==='all' || name==='tag') ? '' : 'none';
+      document.getElementById('search-input').style.display = name==='all' ? '' : 'none';
 
       // Close panels and clear selections
       closeContextPanel();
@@ -2617,7 +2265,6 @@
       // View-specific renders
       if (name === 'sync') renderSyncList();
       if (name === 'shared') renderSharedView();
-      if (name === 'certs') loadCertsView();
 
       // Close sidebar on mobile
       if (window.innerWidth <= 800) closeSidebar();
@@ -2655,68 +2302,21 @@
       let displayItems = [];
 
       if (q) {
+        // Global flat search
         const filtered = allFiles.filter(f => f.key.toLowerCase().includes(q) && !f.key.endsWith('/'));
+        document.getElementById('file-count-badge').textContent = filtered.length + ' 个';
         displayItems = filtered.map(f => ({ ...f, name: f.key, isFolder: false }));
       } else {
-        displayItems = getItemsInCurrentPath(allFiles);
+        // Virtual directory listing
+        const folderAndFiles = getItemsInCurrentPath(allFiles);
+        document.getElementById('file-count-badge').textContent = folderAndFiles.length + ' 个';
+        displayItems = folderAndFiles;
       }
 
-      displayItems = applyTypeFilter(displayItems);
-      displayItems = sortItems(displayItems);
-      document.getElementById('file-count-badge').textContent = displayItems.length + ' 个';
-
       renderBreadcrumbs();
-      updateSortArrows();
 
       if (currentView === 'list') renderListView(displayItems);
       else renderGridView(displayItems);
-
-      renderFolderReadme();
-    }
-
-    function applyTypeFilter(items) {
-      if (typeFilter === 'all') return items;
-      return items.filter(f => {
-        if (f.isFolder || f.key.endsWith('/')) return false;
-        const t = getFileType(f.key);
-        if (typeFilter === 'doc') return ['pdf','text','code'].includes(t);
-        return t === typeFilter;
-      });
-    }
-
-    function sortItems(items) {
-      return [...items].sort((a, b) => {
-        const af = (a.isFolder || a.key.endsWith('/')) ? 0 : 1;
-        const bf = (b.isFolder || b.key.endsWith('/')) ? 0 : 1;
-        if (af !== bf) return af - bf;
-        let cmp = 0;
-        if (sortKey === 'size') cmp = (a.size || 0) - (b.size || 0);
-        else if (sortKey === 'uploaded') cmp = new Date(a.uploaded || 0) - new Date(b.uploaded || 0);
-        else cmp = (a.name || a.key).localeCompare(b.name || b.key, 'zh-CN', { numeric: true, sensitivity: 'base' });
-        return cmp * sortDir;
-      });
-    }
-
-    function toggleSort(key) {
-      if (sortKey === key) sortDir = -sortDir;
-      else { sortKey = key; sortDir = 1; }
-      localStorage.setItem('sortKey', sortKey);
-      localStorage.setItem('sortDir', String(sortDir));
-      renderContent();
-    }
-
-    function updateSortArrows() {
-      document.querySelectorAll('.sort-arrow').forEach(el => {
-        el.textContent = el.dataset.sort === sortKey ? (sortDir === 1 ? '▲' : '▼') : '';
-      });
-    }
-
-    function setTypeFilter(name) {
-      typeFilter = name;
-      document.querySelectorAll('#type-filter-bar .filter-chip').forEach(el => {
-        el.classList.toggle('active', el.dataset.filter === name);
-      });
-      renderContent();
     }
 
     function renderListView(files) {
@@ -2731,7 +2331,7 @@
               <polyline points="13 2 13 9 20 9"/>
             </svg>
             <div class="empty-title">暂无内容</div>
-            <div class="empty-desc">拖拽文件到此处，或按 U 上传 · ⌘K 打开命令面板</div>
+            <div class="empty-desc">上传文件或新建文件夹</div>
           </div>
         </td></tr>`;
         return;
@@ -2779,13 +2379,10 @@
             <span class="tag-chip-dot" style="width:4px;height:4px;background:${def.color}"></span>${t}
           </span>`;
         }).join('');
-        const thumb = getFileType(f.key) === 'image' && f.size < 8 * 1024 * 1024
-          ? `<img class="grid-thumb" src="${authFileUrl(f.key, true)}" alt="" loading="lazy">`
-          : `<div class="grid-icon">${getFileIcon(f.key, 48)}</div>`;
 
-        return `<div class="grid-card ${sel?'selected':''}" onclick="handleGridClick(event,'${k}')" ondblclick="openPreview('${k}')">
+        return `<div class="grid-card ${sel?'selected':''}" onclick="handleGridClick(event,'${k}')">
           <input type="checkbox" class="grid-chk" ${sel?'checked':''} onclick="event.stopPropagation()" onchange="toggleSelectFile('${k}',this.checked)">
-          ${thumb}
+          <div class="grid-icon">${getFileIcon(f.key, 48)}</div>
           <div class="grid-name" title="${name}">${name}</div>
           <div class="grid-size">${formatBytes(f.size)}</div>
           <div class="tag-chips-row" onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap;margin-top:0.4rem;min-height:18px;justify-content:center;width:100%;">
@@ -2794,9 +2391,6 @@
           </div>
           ${pub?`<div class="grid-public-badge">🌐 公开</div>`:''}
           <div class="grid-actions">
-            <button class="act-btn" onclick="event.stopPropagation();openPreview('${k}')" title="预览">
-              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
             <button class="act-btn dl" onclick="event.stopPropagation();downloadFile('${k}')" title="下载">
               <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
@@ -2845,11 +2439,8 @@
             <div style="display:flex;align-items:center;gap:0.4rem;max-width:320px">
               <input type="text" value="${url}" readonly onclick="this.select()"
                 style="flex:1;min-width:0;background:var(--input-bg);border:1px solid var(--panel-border);border-radius:6px;padding:0.25rem 0.5rem;font-size:0.7rem;color:var(--text-secondary);outline:none">
-              <button class="act-btn sh" onclick="navigator.clipboard.writeText('${url}').then(()=>showToast('链接已复制','success'))" title="复制链接">
+              <button class="act-btn sh" onclick="navigator.clipboard.writeText('${url}').then(()=>showToast('链接已复制','success'))" title="复制">
                 <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              </button>
-              <button class="act-btn sh" onclick="copyPublicWget('${k}')" title="复制 wget 命令">
-                W
               </button>
             </div>
           </td>
@@ -2879,16 +2470,6 @@
       }
       const file = allFiles.find(f => f.key === k);
       if (file) openContextPanel(file);
-    }
-
-    function handleRowDblClick(event, keyParam) {
-      if (event.target.closest('.row-actions, .col-chk, input, .quick-tag-add-btn')) return;
-      const k = dk(keyParam);
-      if (k.endsWith('/')) {
-        navigateToPath(k);
-        return;
-      }
-      openPreview(keyParam);
     }
 
     function handleGridClick(event, keyParam) {
@@ -2934,7 +2515,7 @@
           </div>
           <div class="panel-prop">
             <span class="prop-label">修改时间</span>
-            <span class="prop-val" style="font-size:0.72rem" title="${formatDate(file.uploaded)}">${formatRelative(file.uploaded)}</span>
+            <span class="prop-val" style="font-size:0.72rem">${formatDate(file.uploaded)}</span>
           </div>
           <div class="panel-prop">
             <span class="prop-label">文件类型</span>
@@ -2955,10 +2536,6 @@
         </div>
         <div class="panel-divider"></div>
         <div class="panel-actions">
-          <button class="panel-btn gold" onclick="openPreview('${k}')">
-            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            在线预览
-          </button>
           <button class="panel-btn gold" onclick="openTagPickerModal('${k}')">
             <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             ${tags.length ? '管理标签' : '添加标签'}
@@ -2973,7 +2550,7 @@
           </button>
           <button class="panel-btn" onclick="shareFile('${k}')">
             <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            生成时效分享链接
+            生成10 分钟分享链接
           </button>
           <button class="panel-btn ${pub?'':'gold'}" onclick="openPublicModal('${k}')">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
@@ -3124,11 +2701,6 @@
       if (window.innerWidth <= 800) closeSidebar();
     }
 
-    function triggerFolderUpload() {
-      document.getElementById('folder-input').click();
-      if (window.innerWidth <= 800) closeSidebar();
-    }
-
     // ============================================================
     // DRAG & DROP
     // ============================================================
@@ -3140,11 +2712,11 @@
       dragCount--; if (dragCount <= 0) { dragCount=0; document.getElementById('drag-overlay').classList.remove('on'); }
     });
     document.addEventListener('dragover', e => e.preventDefault());
-    document.addEventListener('drop', async e => {
+    document.addEventListener('drop', e => {
       e.preventDefault(); dragCount=0;
       document.getElementById('drag-overlay').classList.remove('on');
-      const packed = await collectDroppedFiles(e.dataTransfer);
-      enqueueUploads(packed);
+      const files = e.dataTransfer.files;
+      for (const f of files) startUpload(f);
     });
 
     // ============================================================
@@ -3152,108 +2724,11 @@
     // ============================================================
     function handleFileSelect(e) {
       if (!e.target.files?.length) return;
-      enqueueUploads([...e.target.files].map(f => ({ file: f, rel: f.name })));
+      for (const f of e.target.files) startUpload(f);
       e.target.value = '';
     }
 
-    function handleFolderSelect(e) {
-      if (!e.target.files?.length) return;
-      const packed = [...e.target.files].map(f => ({
-        file: f,
-        rel: f.webkitRelativePath || f.name
-      }));
-      enqueueUploads(packed);
-      e.target.value = '';
-    }
-
-    function enqueueUploads(items) {
-      for (const item of items) {
-        if (!item?.file) continue;
-        uploadTasks.push({
-          id: Date.now() + Math.random(),
-          file: item.file,
-          rel: item.rel || item.file.name,
-          pct: 0,
-          status: '排队中'
-        });
-      }
-      renderUploadQueue();
-      processUploadQueue();
-    }
-
-    function renderUploadQueue() {
-      const box = document.getElementById('upload-queue');
-      const list = document.getElementById('upload-queue-list');
-      if (!box || !list) return;
-      if (!uploadTasks.length) { box.classList.remove('open'); return; }
-      box.classList.add('open');
-      list.innerHTML = uploadTasks.slice(-8).map(t => `
-        <div class="uq-item">
-          <div class="uq-name" title="${escapeHtml(t.rel)}">${escapeHtml(t.rel)}</div>
-          <span style="color:var(--text-secondary);white-space:nowrap">${t.status}${t.pct ? ' ' + t.pct + '%' : ''}</span>
-        </div>
-        <div class="uq-bar"><div style="width:${t.pct || 0}%"></div></div>
-      `).join('');
-    }
-
-    async function processUploadQueue() {
-      if (uploadBusy) return;
-      uploadBusy = true;
-      while (uploadTasks.some(t => t.status === '排队中')) {
-        const task = uploadTasks.find(t => t.status === '排队中');
-        if (!task) break;
-        await startUpload(task);
-      }
-      uploadBusy = false;
-      setTimeout(() => {
-        if (uploadTasks.every(t => t.status.startsWith('✓') || t.status.startsWith('✕'))) {
-          const box = document.getElementById('upload-queue');
-          if (box) box.classList.remove('open');
-          uploadTasks = [];
-        }
-      }, 2200);
-    }
-
-    async function collectDroppedFiles(dataTransfer) {
-      const items = [...(dataTransfer.items || [])];
-      const entries = items.map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
-      if (!entries.length) {
-        return [...dataTransfer.files].map(f => ({ file: f, rel: f.name }));
-      }
-      const files = [];
-      for (const entry of entries) {
-        await walkEntry(entry, '', files);
-      }
-      return files;
-    }
-
-    async function walkEntry(entry, prefix, files) {
-      if (entry.isFile) {
-        const file = await new Promise((res, rej) => entry.file(res, rej));
-        files.push({ file, rel: prefix + file.name });
-      } else if (entry.isDirectory) {
-        const reader = entry.createReader();
-        const children = await new Promise((res, rej) => {
-          const acc = [];
-          const read = () => reader.readEntries(batch => {
-            if (!batch.length) return res(acc);
-            acc.push(...batch);
-            read();
-          }, rej);
-          read();
-        });
-        for (const child of children) {
-          await walkEntry(child, prefix + entry.name + '/', files);
-        }
-      }
-    }
-
-    async function startUpload(taskOrFile) {
-      const task = taskOrFile && taskOrFile.file ? taskOrFile : null;
-      const file = task ? task.file : taskOrFile;
-      const relPath = task ? task.rel : file.name;
-      const destKey = currentPath + relPath;
-
+    async function startUpload(file) {
       const card  = document.getElementById('upload-progress-card');
       const fill  = document.getElementById('progress-bar-fill');
       const fname = document.getElementById('progress-filename');
@@ -3262,19 +2737,18 @@
       const spd   = document.getElementById('progress-speed');
 
       card.style.display = 'block';
-      fname.textContent = relPath;
+      fname.textContent = file.name;
       pct.textContent   = '0%';
       stat.textContent  = '初始化...';
       fill.style.width  = '0%';
-      if (task) { task.status = '上传中'; task.pct = 0; renderUploadQueue(); }
 
-      const totalChunks = Math.ceil(file.size / CHUNK_SIZE) || 1;
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       let uploadId, uploadKey;
 
       try {
         const initR = await fetch('/api/upload-init', {
           method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
-          body: JSON.stringify({ filename: destKey, contentType: file.type||'application/octet-stream' })
+          body: JSON.stringify({ filename: currentPath + file.name, contentType: file.type||'application/octet-stream' })
         });
         if (!initR.ok) throw new Error('初始化上传失败');
         const initD = await initR.json();
@@ -3299,12 +2773,11 @@
           parts.push({ partNumber:i+1, etag:partD.etag });
 
           done += (end - start);
-          const p   = file.size ? Math.round((done / file.size) * 100) : 100;
-          const spd_ = done / Math.max((Date.now()-t0)/1000, 0.001);
+          const p   = Math.round((done / file.size) * 100);
+          const spd_ = done / ((Date.now()-t0)/1000);
           fill.style.width   = p + '%';
           pct.textContent    = p + '%';
           spd.textContent    = formatBytes(spd_) + '/s';
-          if (task) { task.pct = p; task.status = '上传中'; renderUploadQueue(); }
         }
 
         const cmpR = await fetch(`/api/upload-complete?key=${ek(uploadKey)}&uploadId=${uploadId}`, {
@@ -3315,14 +2788,12 @@
 
         stat.textContent = '✓ 上传成功！';
         fill.style.width = '100%'; pct.textContent = '100%';
-        if (task) { task.pct = 100; task.status = '✓ 完成'; renderUploadQueue(); }
-        showToast(`「${relPath}」上传成功`, 'success');
+        showToast(`「${file.name}」上传成功`, 'success');
         setTimeout(() => { card.style.display='none'; }, 2200);
         await loadFiles();
 
       } catch(e) {
         stat.textContent = '✕ ' + e.message;
-        if (task) { task.status = '✕ 失败'; renderUploadQueue(); }
         showToast('上传失败: '+e.message, 'error');
         setTimeout(()=>{ card.style.display='none'; }, 3000);
       }
@@ -3331,8 +2802,16 @@
     // ============================================================
     // FILE OPERATIONS
     // ============================================================
-    function shareFile(keyParam) {
-      openShareModal(keyParam);
+    async function shareFile(keyParam) {
+      try {
+        const r = await fetch(`/api/share?key=${keyParam}`, { headers:getHeaders() });
+        if (r.ok) {
+          const d = await r.json();
+          navigator.clipboard.writeText(d.url)
+            .then(()=>showToast('签名分享链接已复制（10 分钟有效）','success'))
+            .catch(()=>showToast('复制失败：'+d.url,'error'));
+        } else showToast('生成链接失败','error');
+      } catch(e){ showToast('请求异常: '+e.message,'error'); }
     }
 
     // ============================================================
@@ -3648,12 +3127,10 @@
         input.value = url;
         togBtn.textContent = '取消公开';
         togBtn.className   = 'btn btn-danger';
-        fillPubSnippets(url, k);
       } else {
         input.value = '（未开启）';
         togBtn.textContent = '开启公开';
         togBtn.className   = 'btn';
-        document.getElementById('pub-snippets').style.display = 'none';
       }
       document.getElementById('public-modal').classList.add('active');
     }
@@ -3689,12 +3166,10 @@
           if (nextPub) {
             document.getElementById('pub-url-input').value = url;
             btn.textContent = '取消公开'; btn.className = 'btn btn-danger';
-            fillPubSnippets(url, k);
             navigator.clipboard.writeText(url).then(()=>showToast('公开链接已开启并复制','success')).catch(()=>showToast('公开链接已开启','success'));
           } else {
             document.getElementById('pub-url-input').value = '（未开启）';
             btn.textContent = '开启公开'; btn.className = 'btn';
-            document.getElementById('pub-snippets').style.display = 'none';
             showToast('已取消公开状态','success');
           }
           renderContent(); renderSharedView();
@@ -4009,345 +3484,6 @@
         btn.textContent = origText;
       }
     }
-
-    // ============================================================
-    // PUBLIC / SHARE SNIPPETS
-    // ============================================================
-    function fillPubSnippets(url, key) {
-      const wrap = document.getElementById('pub-snippets');
-      if (!wrap) return;
-      wrap.style.display = 'block';
-      const name = (key || 'file').split('/').pop();
-      document.getElementById('pub-wget').textContent = `wget -O "${name}" "${url}"`;
-      document.getElementById('pub-curl').textContent = `curl -fsSL -o "${name}" "${url}"`;
-    }
-
-    function copyPublicWget(keyParam) {
-      const key = dk(keyParam);
-      const url = `${location.origin}/f/${ek(key)}`;
-      const name = key.split('/').pop();
-      copyText(`wget -O "${name}" "${url}"`, 'wget 命令已复制');
-    }
-
-    function openShareModal(keyParam) {
-      shareModalKey = dk(keyParam);
-      shareTtl = 600;
-      document.querySelectorAll('#share-ttl-row .filter-chip').forEach(el => {
-        el.classList.toggle('active', el.dataset.ttl === '600');
-      });
-      document.getElementById('share-modal-desc').textContent =
-        `为「${shareModalKey}」生成 HMAC 签名链接。过期后自动失效，无需开启永久公开。`;
-      document.getElementById('share-url-input').value = '';
-      document.getElementById('share-snippets').style.display = 'none';
-      document.getElementById('share-modal').classList.add('active');
-    }
-
-    function closeShareModal() {
-      document.getElementById('share-modal').classList.remove('active');
-      shareModalKey = null;
-    }
-
-    function setShareTtl(ttl) {
-      shareTtl = ttl;
-      document.querySelectorAll('#share-ttl-row .filter-chip').forEach(el => {
-        el.classList.toggle('active', Number(el.dataset.ttl) === ttl);
-      });
-    }
-
-    async function generateShareLink() {
-      if (!shareModalKey) return;
-      const btn = document.getElementById('share-gen-btn');
-      btn.disabled = true; btn.textContent = '生成中...';
-      try {
-        const r = await fetch(`/api/share?key=${ek(shareModalKey)}&ttl=${shareTtl}`, { headers: getHeaders() });
-        if (!r.ok) throw new Error('生成失败');
-        const d = await r.json();
-        document.getElementById('share-url-input').value = d.url;
-        const name = shareModalKey.split('/').pop();
-        document.getElementById('share-wget').textContent = `wget -O "${name}" "${d.url}"`;
-        document.getElementById('share-curl').textContent = `curl -fsSL -o "${name}" "${d.url}"`;
-        document.getElementById('share-snippets').style.display = 'block';
-        copyText(d.url, `分享链接已复制（${ttlLabel(shareTtl)}有效）`);
-      } catch (e) {
-        showToast(e.message, 'error');
-      } finally {
-        btn.disabled = false; btn.textContent = '生成并复制';
-      }
-    }
-
-    function copyShareUrl() {
-      const v = document.getElementById('share-url-input').value;
-      if (v) copyText(v, '分享链接已复制');
-    }
-
-    function ttlLabel(ttl) {
-      return ({ 600:'10 分钟', 3600:'1 小时', 21600:'6 小时', 86400:'1 天', 604800:'7 天' })[ttl] || (ttl + ' 秒');
-    }
-
-    // ============================================================
-    // PREVIEW (inspired by OpenList / Finder)
-    // ============================================================
-    function currentPreviewableKeys() {
-      const q = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
-      let items = q
-        ? allFiles.filter(f => f.key.toLowerCase().includes(q) && !f.key.endsWith('/'))
-        : getItemsInCurrentPath(allFiles).filter(f => !f.isFolder && !f.key.endsWith('/'));
-      items = applyTypeFilter(items);
-      return sortItems(items).filter(f => isPreviewable(f.key)).map(f => f.key);
-    }
-
-    async function openPreview(keyParam) {
-      const key = dk(keyParam);
-      if (key.endsWith('/')) return;
-      previewList = currentPreviewableKeys();
-      if (!previewList.includes(key) && isPreviewable(key)) previewList.push(key);
-      previewIndex = Math.max(0, previewList.indexOf(key));
-      if (previewIndex < 0) {
-        showToast('该文件类型暂不支持预览，已改为下载', 'info');
-        downloadFile(ek(key));
-        return;
-      }
-      document.getElementById('preview-overlay').classList.add('open');
-      await renderPreview();
-    }
-
-    async function renderPreview() {
-      const key = previewList[previewIndex];
-      if (!key) return;
-      const type = getFileType(key);
-      const url = authFileUrl(key, true);
-      document.getElementById('preview-title').textContent = key;
-      document.getElementById('preview-download-btn').onclick = () => downloadFile(ek(key));
-      const stage = document.getElementById('preview-stage');
-      const navHtml = `
-        <button class="preview-nav prev" onclick="previewStep(-1)" title="上一张">
-          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <button class="preview-nav next" onclick="previewStep(1)" title="下一张">
-          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>`;
-
-      if (type === 'image') {
-        stage.innerHTML = `${navHtml}<img src="${url}" alt="${escapeHtml(key)}">`;
-      } else if (type === 'video') {
-        stage.innerHTML = `${navHtml}<video src="${url}" controls autoplay style="max-height:100%;max-width:100%"></video>`;
-      } else if (type === 'audio') {
-        stage.innerHTML = `${navHtml}<audio src="${url}" controls autoplay></audio>`;
-      } else if (type === 'pdf') {
-        stage.innerHTML = `${navHtml}<iframe src="${url}" title="${escapeHtml(key)}"></iframe>`;
-      } else if (type === 'text' || type === 'code') {
-        stage.innerHTML = `${navHtml}<div class="preview-code">加载中...</div>`;
-        try {
-          const r = await fetch(url);
-          const text = await r.text();
-          const clipped = text.length > 400000 ? text.slice(0, 400000) + '\n\n… 内容过长，已截断' : text;
-          const isMd = /\.md$/i.test(key);
-          stage.innerHTML = `${navHtml}<div class="preview-code">${isMd ? renderMarkdown(clipped) : escapeHtml(clipped)}</div>`;
-        } catch (e) {
-          stage.innerHTML = `${navHtml}<div class="preview-code">无法加载预览：${escapeHtml(e.message)}</div>`;
-        }
-      } else {
-        stage.innerHTML = `${navHtml}<div class="preview-code">不支持预览此类型</div>`;
-      }
-    }
-
-    function previewStep(delta) {
-      if (!previewList.length) return;
-      previewIndex = (previewIndex + delta + previewList.length) % previewList.length;
-      renderPreview();
-    }
-
-    function closePreview() {
-      const stage = document.getElementById('preview-stage');
-      stage.querySelectorAll('video, audio').forEach(el => { el.pause(); el.src = ''; });
-      document.getElementById('preview-overlay').classList.remove('open');
-    }
-
-    function renderMarkdown(src) {
-      let s = escapeHtml(src);
-      s = s.replace(/```([\s\S]*?)```/g, (_, code) => `<pre><code>${code}</code></pre>`);
-      s = s.replace(/^### (.*)$/gm, '<h3>$1</h3>');
-      s = s.replace(/^## (.*)$/gm, '<h2>$1</h2>');
-      s = s.replace(/^# (.*)$/gm, '<h1>$1</h1>');
-      s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-      s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-      s = s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-      s = s.replace(/^\- (.*)$/gm, '<li>$1</li>');
-      s = s.replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
-      s = s.replace(/\n/g, '<br>');
-      return s;
-    }
-
-    async function renderFolderReadme() {
-      const panel = document.getElementById('readme-panel');
-      const body = document.getElementById('readme-body');
-      if (!panel || !body) return;
-      if (currentNav !== 'all') { panel.style.display = 'none'; return; }
-      const readme = allFiles.find(f => f.key.toLowerCase() === (currentPath + 'readme.md').toLowerCase());
-      if (!readme) { panel.style.display = 'none'; return; }
-      try {
-        const r = await fetch(authFileUrl(readme.key, true));
-        if (!r.ok) { panel.style.display = 'none'; return; }
-        const text = await r.text();
-        body.innerHTML = renderMarkdown(text.slice(0, 20000));
-        panel.style.display = 'block';
-      } catch {
-        panel.style.display = 'none';
-      }
-    }
-
-    // ============================================================
-    // CERTS DASHBOARD
-    // ============================================================
-    async function loadCertsView() {
-      const grid = document.getElementById('certs-grid');
-      if (!grid) return;
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-title">加载证书列表...</div></div>`;
-      try {
-        const r = await fetch('/api/certs', { headers: getHeaders() });
-        if (r.status === 401) { logout(); return; }
-        if (!r.ok) throw new Error('加载失败');
-        const d = await r.json();
-        const certs = d.certs || [];
-        if (!certs.length) {
-          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-            <div class="empty-title">还没有推送过证书</div>
-            <div class="empty-desc">在上游 VPS 配置 acme.sh / Certbot hook，续签后会自动出现在这里</div>
-          </div>`;
-          return;
-        }
-        grid.innerHTML = certs.map(c => {
-          const files = (c.files || []).map(f => `<span class="cert-file-chip">${escapeHtml(f.filename)}</span>`).join('');
-          const wget = `curl -fsSL -H "X-Cert-Token: $CERT_PUSH_TOKEN" "${location.origin}/api/cert-pull?domain=${encodeURIComponent(c.domain)}&file=fullchain.pem" -o fullchain.pem`;
-          return `<div class="cert-card">
-            <h3>${escapeHtml(c.domain)}</h3>
-            <div class="cert-meta">最近推送 ${formatRelative(c.pushed_at)} · ${formatBytes(c.size)}</div>
-            <div class="cert-files">${files || '<span style="color:var(--text-secondary);font-size:0.75rem">无文件</span>'}</div>
-            <div class="snippet-box" onclick="copyText(this.textContent, '拉取命令已复制')">${escapeHtml(wget)}</div>
-          </div>`;
-        }).join('');
-      } catch (e) {
-        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-title">加载失败</div><div class="empty-desc">${escapeHtml(e.message)}</div></div>`;
-      }
-    }
-
-    // ============================================================
-    // COMMAND PALETTE + SHORTCUTS
-    // ============================================================
-    function getCommandList() {
-      const cmds = [
-        { id: 'upload', label: '上传文件', hint: 'U', run: () => triggerUpload() },
-        { id: 'folder-up', label: '上传文件夹', hint: '', run: () => triggerFolderUpload() },
-        { id: 'mkdir', label: '新建文件夹', hint: 'N', run: () => openNewFolderModal() },
-        { id: 'all', label: '转到全部文件', hint: '', run: () => setNavView('all') },
-        { id: 'shared', label: '转到公开分享', hint: '', run: () => setNavView('shared') },
-        { id: 'sync', label: '转到 GitHub 订阅', hint: '', run: () => setNavView('sync') },
-        { id: 'certs', label: '转到 SSL 证书', hint: '', run: () => setNavView('certs') },
-        { id: 'theme', label: '切换明暗主题', hint: '', run: () => toggleTheme() },
-        { id: 'keys', label: '查看快捷键', hint: '?', run: () => openShortcutsModal() },
-      ];
-      const q = (document.getElementById('cmdk-input')?.value || '').toLowerCase().trim();
-      const fileHits = q
-        ? allFiles.filter(f => !f.key.endsWith('/') && f.key.toLowerCase().includes(q)).slice(0, 8).map(f => ({
-            id: 'file:' + f.key,
-            label: '打开 ' + f.key,
-            hint: formatBytes(f.size),
-            run: () => { closeCommandPalette(); openContextPanel(f); if (isPreviewable(f.key)) openPreview(ek(f.key)); }
-          }))
-        : [];
-      const cmdHits = q ? cmds.filter(c => c.label.toLowerCase().includes(q)) : cmds;
-      return [...cmdHits, ...fileHits];
-    }
-
-    function openCommandPalette() {
-      document.getElementById('cmdk-overlay').classList.add('open');
-      const input = document.getElementById('cmdk-input');
-      input.value = '';
-      cmdkActive = 0;
-      renderCommandPalette();
-      setTimeout(() => input.focus(), 30);
-    }
-
-    function closeCommandPalette() {
-      document.getElementById('cmdk-overlay').classList.remove('open');
-    }
-
-    function renderCommandPalette() {
-      cmdkItems = getCommandList();
-      if (cmdkActive >= cmdkItems.length) cmdkActive = 0;
-      const list = document.getElementById('cmdk-list');
-      if (!cmdkItems.length) {
-        list.innerHTML = `<div class="cmdk-empty">没有匹配的命令或文件</div>`;
-        return;
-      }
-      list.innerHTML = cmdkItems.map((item, i) => `
-        <button class="cmdk-item ${i===cmdkActive?'active':''}" onmouseenter="cmdkActive=${i}" onclick="runCmdk(${i})">
-          <span>${escapeHtml(item.label)}</span>
-          <span class="hint">${escapeHtml(item.hint || '')}</span>
-        </button>
-      `).join('');
-    }
-
-    function runCmdk(i) {
-      const item = cmdkItems[i];
-      closeCommandPalette();
-      if (item) item.run();
-    }
-
-    function handleCmdkKey(e) {
-      if (e.key === 'ArrowDown') { e.preventDefault(); cmdkActive = Math.min(cmdkActive + 1, cmdkItems.length - 1); renderCommandPalette(); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); cmdkActive = Math.max(cmdkActive - 1, 0); renderCommandPalette(); }
-      else if (e.key === 'Enter') { e.preventDefault(); runCmdk(cmdkActive); }
-      else if (e.key === 'Escape') { closeCommandPalette(); }
-    }
-
-    function openShortcutsModal() {
-      document.getElementById('shortcuts-modal').classList.add('active');
-    }
-    function closeShortcutsModal() {
-      document.getElementById('shortcuts-modal').classList.remove('active');
-    }
-
-    function isTypingTarget(el) {
-      if (!el) return false;
-      const tag = el.tagName;
-      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
-    }
-
-    function anyOverlayOpen() {
-      return document.querySelector('.modal-overlay.active, .preview-overlay.open, .cmdk-overlay.open');
-    }
-
-    document.addEventListener('keydown', (e) => {
-      const previewOpen = document.getElementById('preview-overlay').classList.contains('open');
-      const cmdkOpen = document.getElementById('cmdk-overlay').classList.contains('open');
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        cmdkOpen ? closeCommandPalette() : openCommandPalette();
-        return;
-      }
-      if (e.key === 'Escape') {
-        if (previewOpen) { closePreview(); return; }
-        if (cmdkOpen) { closeCommandPalette(); return; }
-        document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
-        closeContextPanel();
-        return;
-      }
-      if (previewOpen && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
-        e.preventDefault();
-        previewStep(e.key === 'ArrowLeft' ? -1 : 1);
-        return;
-      }
-      if (isTypingTarget(e.target) || cmdkOpen) return;
-      if (e.key === '/' ) { e.preventDefault(); document.getElementById('search-input')?.focus(); }
-      else if (e.key.toLowerCase() === 'u' && !e.metaKey && !e.ctrlKey) { e.preventDefault(); triggerUpload(); }
-      else if (e.key.toLowerCase() === 'n' && !e.metaKey && !e.ctrlKey) { e.preventDefault(); openNewFolderModal(); }
-      else if (e.key === '?' ) { e.preventDefault(); openShortcutsModal(); }
-      else if (e.key === ' ' && contextFile && !anyOverlayOpen()) {
-        e.preventDefault();
-        openPreview(ek(contextFile.key));
-      }
-    });
 
     // ============================================================
     // THEME
