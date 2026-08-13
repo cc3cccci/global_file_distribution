@@ -30,6 +30,11 @@
    * **上游 VPS 推送**：支持 `acme.sh` 或 `Certbot` 在证书续签完成后，通过 Web Hook 自动将最新的证书推送至网盘。
    * **下游 VPS 自动部署**：下游需要使用证书的 VPS 只需执行一键命令，即可拉取最新证书、保存持久化脚本并自动配置每日定时同步任务（cron），支持证书更新后自动重载（Reload）服务（Nginx/Caddy 等）。
 
+6. **客户电脑只读访问码**
+   * 管理员可在「客户访问」页面生成 8 位临时访问码，默认于北京时间当天 23:59 失效，也可选择 1/4/24 小时或自定义时间（最长 30 天）。
+   * 客户使用访问码后只能浏览、搜索和下载普通文件；上传、删除、改名、公开分享、订阅同步和证书目录均不可访问。
+   * 访问码可随时撤销，撤销会立即使现有客户会话失效。R2 同时保存用于登录校验的 HMAC 摘要与 AES-GCM 密文，完整访问码仅管理员可查看和复制。
+
 ---
 
 ## 🏗 架构设计
@@ -141,7 +146,8 @@ RELOAD_CMD="systemctl reload nginx" curl -sS https://<你的网盘域名>/f/scri
 
 ### 公共/匿名接口
 * `GET /` 或 `/index.html`：访问网盘前端控制面板。
-* `POST /api/auth`：密码登录验证。
+* `POST /api/auth`：管理员密码或临时访问码登录验证。
+* `POST /api/logout`：退出并清除客户只读会话。
 * `GET /f/<key>`：获取设置为「公开」的文件，支持直接用 wget/curl 流式下载。
 * `GET /api/download`：流式文件下载接口（包含 HMAC 时效验证或直连鉴权）。
 
@@ -149,8 +155,15 @@ RELOAD_CMD="systemctl reload nginx" curl -sS https://<你的网盘域名>/f/scri
 * `POST /api/cert-push`：VPS 推送证书，Header 携带 `X-Cert-Token`。
 * `GET /api/cert-pull`：下游 VPS 拉取证书，限制只读白名单内的证书文件。
 
+### 客户只读接口（访问码登录后）
+* `GET /api/list`：只返回普通文件，自动排除 `.config/`、`.history/` 与 `certs/`。
+* `GET /api/tags` / `GET /api/tag-defs`：读取普通文件的标签数据。
+* `GET /api/download`：每次下载均校验访问码是否仍有效或已被撤销。
+
 ### 管理员专用接口（Header 需携带 `Authorization: <AUTH_PASSWORD>`）
-* `GET /api/list`：获取网盘内所有文件的对象列表。
+* `GET /api/list`：获取网盘内所有文件的对象列表（管理员可见完整范围）。
+* `GET` / `POST` / `DELETE /api/access-codes`：查看完整访问码、创建和撤销客户只读访问码（旧版摘要记录无法恢复原码）。
+* `GET /api/download-ticket`：为管理员下载生成短时签名地址，避免主密码出现在 URL 中。
 * `POST /api/create-folder`：创建空白文件夹。
 * `DELETE /api/delete?key=<key>`：级联删除文件或文件夹。
 * `POST /api/rename`：重命名或移动文件。

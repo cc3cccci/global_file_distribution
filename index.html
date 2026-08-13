@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>
     (function(){
-      var t=localStorage.getItem('theme')||'dark';
+      var t=localStorage.getItem('theme')||'light';
       if(t==='light') document.documentElement.classList.add('theme-light');
     })();
   </script>
@@ -820,7 +820,11 @@
        TOAST
        ============================================= */
     .toast-container {
-      position: fixed; bottom: 1.25rem; right: 1.25rem;
+      position: fixed;
+      top: max(1rem, env(safe-area-inset-top));
+      left: 50%;
+      width: min(560px, calc(100vw - 2rem));
+      transform: translateX(-50%);
       display: flex; flex-direction: column; gap: 0.5rem;
       z-index: 300; pointer-events: none;
     }
@@ -833,10 +837,14 @@
       box-shadow: 0 4px 18px var(--modal-shadow);
       display: flex; align-items: center; gap: 0.5rem;
       font-size: 0.8rem;
-      transform: translateY(50px); opacity: 0;
+      line-height: 1.45;
+      transform: translateY(-20px); opacity: 0;
       animation: toastIn 0.32s ease forwards;
       pointer-events: auto;
     }
+    .toast.error { border-color: rgba(244,63,94,0.38); }
+    .toast.success { border-color: rgba(16,185,129,0.32); }
+    .toast span { overflow-wrap: anywhere; }
     .toast svg { width: 14px; height: 14px; flex-shrink: 0; stroke-width: 2; fill: none; }
     .toast.success svg { stroke: var(--accent-emerald); }
     .toast.error svg { stroke: var(--accent-rose); }
@@ -853,7 +861,8 @@
       display: flex; align-items: center; justify-content: center;
       opacity: 0; pointer-events: none; transition: opacity 0.18s;
     }
-    .drag-overlay.on { opacity: 1; }
+    .drag-overlay * { pointer-events: none; }
+    .drag-overlay.on { opacity: 1; pointer-events: auto; }
     .drag-msg {
       background: var(--modal-bg);
       border: 2px solid var(--accent-gold);
@@ -861,6 +870,21 @@
       padding: 1.8rem 2.5rem;
       font-size: 1.1rem; font-weight: 700; color: var(--accent-gold);
       text-align: center;
+    }
+
+    /* Drag over folder target highlight */
+    .file-row.drag-over td,
+    .grid-card.drag-over {
+      outline: 2px dashed var(--accent-gold) !important;
+      background: var(--sidebar-active-bg) !important;
+    }
+    .crumb-item {
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .crumb-item:hover {
+      color: var(--accent-gold) !important;
+      text-decoration: underline;
     }
 
     /* =============================================
@@ -1048,6 +1072,163 @@
     }
 
     /* =============================================
+       REFINED WARM-GOLD TOOL THEME
+       ============================================= */
+    :root.theme-light {
+      --bg-gradient: #f6f4ef;
+      --panel-bg: #ffffff;
+      --panel-border: #e5dfd3;
+      --text-primary: #27231d;
+      --text-secondary: #726b60;
+      --accent-gold: #b6924d;
+      --accent-gold-light: #d9c18d;
+      --accent-gold-dark: #8b6b31;
+      --auth-bg: linear-gradient(145deg, #f7f4ec, #eee8dc);
+      --auth-card-bg: rgba(255,255,255,0.96);
+      --modal-bg: #ffffff;
+      --sidebar-bg: #f2eee5;
+      --sidebar-border: #ded6c8;
+      --sidebar-active-bg: rgba(182,146,77,0.13);
+      --sidebar-hover-bg: rgba(39,35,29,0.045);
+      --topbar-bg: rgba(250,248,243,0.94);
+      --row-hover: rgba(182,146,77,0.055);
+      --row-selected: rgba(182,146,77,0.12);
+      --grid-card-bg: #ffffff;
+      --btn-border: #dcd5c9;
+      --input-bg: #fbfaf7;
+      --table-head-bg: #f8f6f1;
+    }
+
+    .theme-light .auth-card,
+    .theme-light .file-table-wrap,
+    .theme-light .inner-panel,
+    .theme-light .grid-card {
+      box-shadow: 0 8px 28px rgba(66,53,31,0.055);
+    }
+    .auth-card { border-radius: 16px; }
+    .auth-logo { letter-spacing: -0.035em; }
+    .auth-mode-help {
+      margin: 0.8rem auto 0;
+      max-width: 270px;
+      color: var(--text-secondary);
+      font-size: 0.74rem;
+      line-height: 1.5;
+    }
+    .btn { box-shadow: none; }
+    .btn:hover { box-shadow: 0 5px 16px rgba(182,146,77,0.2); }
+    .file-table-wrap { border-radius: 12px; }
+    .file-table th { letter-spacing: 0.01em; }
+    .row-actions { opacity: 1; }
+    .content-area { padding: 1.2rem 1.35rem; }
+    .viewer-mode .admin-only { display: none !important; }
+    .viewer-mode .col-status { display: none; }
+    .viewer-mode [draggable="true"] { cursor: default; }
+    .viewer-mode .sidebar-section-label { display: none; }
+    .viewer-mode .sidebar-logo-text::after {
+      content: ' 只读';
+      -webkit-text-fill-color: var(--text-secondary);
+      color: var(--text-secondary);
+      font-size: 0.66rem;
+      font-weight: 500;
+    }
+    .viewer-banner {
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.8rem;
+      padding: 0.72rem 0.9rem;
+      border: 1px solid rgba(182,146,77,0.3);
+      border-radius: 10px;
+      background: rgba(182,146,77,0.09);
+      color: var(--text-primary);
+      font-size: 0.78rem;
+    }
+    .viewer-banner > div { display:flex; gap:0.65rem; align-items:baseline; flex-wrap:wrap; }
+    .viewer-banner strong { color: var(--accent-gold-dark); }
+    .viewer-banner span { color: var(--text-secondary); }
+    .viewer-expiry { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+    .access-page { max-width: 780px; }
+    .access-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+    .field-label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.38rem;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .field-label .form-input { text-align: left; letter-spacing: normal; }
+    .access-create-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-top: 0.9rem;
+    }
+    .access-create-actions > span,
+    .access-list-note { color: var(--text-secondary); font-size: 0.72rem; }
+    .access-code-result {
+      margin-top: 0.9rem;
+      padding: 0.85rem 0.9rem;
+      border-radius: 10px;
+      border: 1px solid rgba(182,146,77,0.35);
+      background: rgba(182,146,77,0.09);
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .access-code-result > div { display:flex; flex-direction:column; gap:0.15rem; }
+    .access-code-result span { color: var(--text-secondary); font-size: 0.7rem; }
+    .access-code-result strong {
+      color: var(--accent-gold-dark);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 1.65rem;
+      letter-spacing: 0.16em;
+    }
+    .access-list-header { display:flex; justify-content:space-between; gap:1rem; align-items:center; margin-bottom:0.8rem; }
+    .access-code-list { display:flex; flex-direction:column; gap:0.55rem; }
+    .access-record {
+      display: grid;
+      grid-template-columns: minmax(160px, 1.4fr) minmax(160px, 1fr) auto;
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.72rem 0.8rem;
+      border: 1px solid var(--panel-border);
+      border-radius: 9px;
+      background: var(--input-bg);
+    }
+    .access-record-title { display:flex; align-items:center; gap:0.5rem; font-weight:600; min-width:0; }
+    .access-record-title span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .access-record-meta { color:var(--text-secondary); font-size:0.72rem; line-height:1.5; }
+    .access-record-code {
+      margin-top: 0.38rem;
+      color: var(--accent-gold-dark);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      user-select: all;
+    }
+    .access-record-code.unavailable {
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0;
+      user-select: text;
+    }
+    .access-record-actions { display:flex; align-items:center; justify-content:flex-end; gap:0.45rem; }
+    .access-status { display:inline-flex; padding:0.12rem 0.42rem; border-radius:99px; font-size:0.65rem; }
+    .access-status.active { color:#047857; background:rgba(16,185,129,.1); }
+    .access-status.expired { color:var(--text-secondary); background:var(--sidebar-hover-bg); }
+    .access-status.revoked { color:var(--accent-rose); background:rgba(244,63,94,.1); }
+    .empty-inline { color:var(--text-secondary); text-align:center; padding:1.1rem; font-size:0.78rem; }
+
+    /* =============================================
        ANIMATIONS
        ============================================= */
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
@@ -1075,10 +1256,14 @@
       .topbar-search-wrap { max-width: 180px; }
 
       .context-panel.open {
-        position: fixed; right: 0; top: 0;
-        height: 100vh;
-        z-index: 40;
-        box-shadow: -4px 0 24px rgba(0,0,0,0.5);
+        position: fixed; right: 0; bottom: 0; left: 0; top: auto;
+        width: 100vw !important; min-width: 100vw !important;
+        height: 75vh;
+        z-index: 95;
+        border-radius: 18px 18px 0 0;
+        border-top: 1px solid var(--panel-border);
+        border-left: none;
+        box-shadow: 0 -8px 36px rgba(0,0,0,0.6);
       }
 
       .batch-bar {
@@ -1089,6 +1274,10 @@
       .batch-bar.open { bottom: 0.75rem; }
 
       .content-area { padding: 0.75rem; }
+
+      .access-form-grid { grid-template-columns: 1fr; }
+      .access-record { grid-template-columns: 1fr; }
+      .viewer-banner { align-items:flex-start; flex-direction:column; }
 
       .fname-text { max-width: 160px; }
 
@@ -1101,6 +1290,7 @@
       .col-size { display: none; }
     }
   </style>
+  <link rel="icon" type="image/png" href="data:image/png;base64,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">
 </head>
 
 <body>
@@ -1115,12 +1305,18 @@
       <div class="auth-subtitle">Cloudflare R2 极速私有云存储</div>
       <div class="auth-input-wrap">
         <input type="password" id="auth-password" class="auth-input"
-          placeholder="请输入访问密码"
+          placeholder="管理员密码或 8 位访问码" autocomplete="current-password"
+          autocapitalize="characters" spellcheck="false"
           onkeydown="if(event.key==='Enter')attemptAuth()">
       </div>
-      <button class="btn btn-full" onclick="attemptAuth()">
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-secondary); margin-top:15px; cursor:pointer; justify-content: center;">
+        <input type="checkbox" id="auth-public-mode" checked>
+        <span>在此设备保持管理员登录</span>
+      </label>
+      <div class="auth-mode-help">客户电脑请输入临时访问码，将自动进入只读下载模式。</div>
+      <button class="btn btn-full" onclick="attemptAuth()" style="margin-top:20px;">
         <svg style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        验证并进入
+        进入文件库
       </button>
     </div>
   </div>
@@ -1135,6 +1331,7 @@
 
   <!-- ===== SIDEBAR MOBILE OVERLAY ===== -->
   <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+  <div id="context-overlay" class="sidebar-overlay" onclick="closeContextPanel()"></div>
 
   <!-- ===== APP SHELL ===== -->
   <div class="app-shell" id="app-shell">
@@ -1151,7 +1348,7 @@
       </div>
 
       <!-- Upload FAB and New Folder Button -->
-      <div class="upload-fab-wrap" style="display:flex;gap:0.5rem;padding:0.85rem 0.85rem 0.5rem;">
+      <div class="upload-fab-wrap admin-only" style="display:flex;gap:0.5rem;padding:0.85rem 0.85rem 0.5rem;">
         <button class="upload-fab" onclick="triggerUpload()" style="flex:1;">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
           上传文件
@@ -1170,20 +1367,24 @@
           <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           全部文件
         </button>
-        <button class="nav-item" data-nav="shared" onclick="setNavView('shared')">
+        <button class="nav-item admin-only" data-nav="shared" onclick="setNavView('shared')">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
           公开分享
         </button>
-        <button class="nav-item" data-nav="sync" onclick="setNavView('sync')">
+        <button class="nav-item admin-only" data-nav="sync" onclick="setNavView('sync')">
           <svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
           GitHub 订阅
+        </button>
+        <button class="nav-item admin-only" data-nav="access" onclick="setNavView('access')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2"/><path d="M17 4h5M19.5 1.5v5"/></svg>
+          客户访问
         </button>
 
         <!-- Tags section divider -->
         <div class="sidebar-divider" style="margin:0.5rem 0.85rem 0.2rem"></div>
         <div class="tags-section-header">
           <span class="tags-section-label">标签</span>
-          <button class="tag-mgmt-btn" onclick="openTagMgmtModal()" title="管理标签">+ 管理</button>
+          <button class="tag-mgmt-btn admin-only" onclick="openTagMgmtModal()" title="管理标签">+ 管理</button>
         </div>
 
         <!-- Tag nav items (rendered dynamically) -->
@@ -1222,7 +1423,7 @@
 
         <div class="topbar-search-wrap">
           <svg class="topbar-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input class="topbar-search" id="search-input" placeholder="搜索文件名称..." oninput="renderContent()">
+          <input class="topbar-search" id="search-input" placeholder="搜索文件名称..." oninput="handleSearchInput()">
         </div>
 
         <div class="topbar-right">
@@ -1247,11 +1448,19 @@
       <!-- ---- CONTENT AREA ---- -->
       <div class="content-area" id="content-area">
 
+        <div id="viewer-banner" class="viewer-banner" style="display:none">
+          <div>
+            <strong>客户只读模式</strong>
+            <span>你可以浏览、搜索并下载文件，无法修改或删除内容。</span>
+          </div>
+          <span id="viewer-expiry" class="viewer-expiry"></span>
+        </div>
+
         <!-- Hidden file input -->
         <input type="file" id="file-input" style="display:none" onchange="handleFileSelect(event)" multiple>
 
         <!-- Upload Progress Toast (inline) -->
-        <div id="upload-progress-card" class="upload-progress-toast" style="display:none">
+        <div id="upload-progress-card" class="upload-progress-toast admin-only" style="display:none" role="status" aria-live="polite">
           <div class="progress-header">
             <span class="progress-filename" id="progress-filename">准备中...</span>
             <span class="progress-pct" id="progress-percent">0%</span>
@@ -1410,6 +1619,62 @@
           </div>
         </div>
 
+        <!-- ===== VIEW: CUSTOMER ACCESS ===== -->
+        <div id="view-access" class="view-panel admin-only">
+          <div class="access-page">
+            <div class="view-page-title">客户只读访问</div>
+            <div class="view-page-desc">为客户电脑生成临时访问码。访问者只能浏览和下载全部普通文件，不能上传、删除或修改。</div>
+
+            <div class="inner-panel access-create-card">
+              <div class="inner-panel-title">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2"/></svg>
+                创建访问码
+              </div>
+              <div class="access-form-grid">
+                <label class="field-label">用途备注
+                  <input type="text" id="access-label" class="form-input" maxlength="60" placeholder="例如：张先生电脑（可选）">
+                </label>
+                <label class="field-label">有效期
+                  <select id="access-expiry-mode" class="form-input" onchange="toggleCustomAccessExpiry()">
+                    <option value="today" selected>今天 23:59（北京时间）</option>
+                    <option value="1h">1 小时</option>
+                    <option value="4h">4 小时</option>
+                    <option value="24h">24 小时</option>
+                    <option value="custom">自定义日期和时间</option>
+                  </select>
+                </label>
+                <label class="field-label" id="access-custom-wrap" style="display:none">自定义到期时间
+                  <input type="datetime-local" id="access-custom-expiry" class="form-input">
+                </label>
+              </div>
+              <div class="access-create-actions">
+                <button class="btn" id="create-access-btn" onclick="createAccessCode()">生成 8 位访问码</button>
+                <span>最长可设置 30 天；访问码会加密保存，可在下方随时复制。</span>
+              </div>
+              <div id="access-code-result" class="access-code-result" style="display:none">
+                <div>
+                  <span>新访问码</span>
+                  <strong id="new-access-code">--------</strong>
+                </div>
+                <button class="btn btn-secondary" onclick="copyNewAccessCode()">复制访问码</button>
+              </div>
+            </div>
+
+            <div class="inner-panel">
+              <div class="access-list-header">
+                <div>
+                  <div class="inner-panel-title" style="margin-bottom:0">已创建的访问码</div>
+                  <div class="access-list-note">完整访问码仅管理员可见；到期或撤销后，客户现有会话会立即失效。</div>
+                </div>
+                <button class="btn btn-secondary" onclick="loadAccessCodes()">刷新</button>
+              </div>
+              <div id="access-code-list" class="access-code-list">
+                <div class="empty-inline">打开此页面后将加载访问码记录</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
       <!-- /content-area -->
 
@@ -1438,16 +1703,16 @@
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
       下载
     </button>
-    <button class="batch-btn" onclick="batchShare()">
+    <button class="batch-btn admin-only" onclick="batchShare()">
       <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       分享链接
     </button>
-    <button class="batch-btn" onclick="batchTogglePublic()">
+    <button class="batch-btn admin-only" onclick="batchTogglePublic()">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"/></svg>
       公开链接
     </button>
-    <div class="batch-sep"></div>
-    <button class="batch-btn danger" onclick="batchDelete()">
+    <div class="batch-sep admin-only"></div>
+    <button class="batch-btn danger admin-only" onclick="batchDelete()">
       <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       删除
     </button>
@@ -1461,7 +1726,7 @@
   <!-- ===== MODALS ===== -->
 
   <!-- Delete confirm -->
-  <div class="modal-overlay" id="confirm-modal">
+  <div class="modal-overlay" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
     <div class="modal">
       <div class="modal-title" id="confirm-title">确认删除？</div>
       <div class="modal-desc" id="confirm-desc">此操作将从 Cloudflare R2 中永久抹除文件，无法恢复。</div>
@@ -1551,7 +1816,10 @@
       <div class="modal-desc" id="move-file-desc" style="margin-bottom: 1rem; color:var(--text-secondary);"></div>
       <div style="margin-bottom:0.75rem; text-align:left;">
         <label style="font-size:0.75rem;color:var(--text-secondary);display:block;margin-bottom:0.25rem;">目标文件夹</label>
-        <select class="form-input" id="move-target-folder" style="background:var(--input-bg);color:var(--text-primary);border:1px solid var(--panel-border);outline:none;text-align:left;letter-spacing:normal;"></select>
+        <div style="display:flex;gap:0.4rem;align-items:center;">
+          <select class="form-input" id="move-target-folder" style="flex:1;background:var(--input-bg);color:var(--text-primary);border:1px solid var(--panel-border);outline:none;text-align:left;letter-spacing:normal;"></select>
+          <button class="btn btn-secondary" onclick="promptNewFolderInMoveModal()" style="font-size:0.75rem;padding:0.45rem 0.65rem;" title="新建目标文件夹">+ 新建</button>
+        </div>
       </div>
       <div style="margin-bottom:1.25rem; text-align:left;">
         <label style="font-size:0.75rem;color:var(--text-secondary);display:block;margin-bottom:0.25rem;">文件名</label>
@@ -1565,7 +1833,7 @@
   </div>
 
   <!-- ===== TOAST CONTAINER ===== -->
-  <div class="toast-container" id="toast-container"></div>
+  <div class="toast-container" id="toast-container" role="status" aria-live="polite"></div>
 
 
   <script>
@@ -1587,6 +1855,9 @@
     let currentPath    = ''; // virtual folder path (e.g., 'docs/')
     let quickTagDropdown = null; // tracking the quick tag dropdown element
     let moveSrcKey     = null; // the key of the file being moved/renamed
+    let authRole       = sessionStorage.getItem('auth_role') || localStorage.getItem('auth_role') || '';
+    let viewerExpiresAt = Number(sessionStorage.getItem('auth_expires') || 0);
+    let accessCodeRecords = [];
 
     // ============================================================
     // TAG STATE
@@ -1680,6 +1951,7 @@
 
       // Hide search when in tag view (reuse topbar search)
       document.getElementById('search-input').style.display = '';
+      document.querySelector('.topbar-search-wrap').style.display = '';
 
       renderTagFileList();
       closeContextPanel();
@@ -1712,17 +1984,37 @@
       }
 
       tbody.innerHTML = files.map(f => buildFileRow(f)).join('');
+      updateSelectAllState();
     }
 
     // Build a file row HTML (reusable for both list view and tag view)
     function buildFileRow(f) {
       const isFolder = f.isFolder || f.key.endsWith('/');
       const name = f.name || f.key;
+      const safeName = escapeHtml(name);
       const k = ek(f.key);
       const sel = selectedFiles.has(f.key);
 
+      if (f.isParentDir) {
+        return `<tr class="file-row" onclick="navigateToPath(dk('${k}'))">
+          <td class="col-chk"></td>
+          <td>
+            <div class="fname-cell">
+              <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:var(--accent-gold);fill:none;stroke-width:2.2;flex-shrink:0"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <div style="min-width:0">
+                <div class="fname-text" style="font-weight: 600;color:var(--accent-gold);" title="${safeName}">${safeName}</div>
+              </div>
+            </div>
+          </td>
+          <td class="col-size" style="color:var(--text-secondary);white-space:nowrap">-</td>
+          <td class="col-date" style="color:var(--text-secondary);font-size:0.78rem;white-space:nowrap">-</td>
+          <td class="col-status">-</td>
+          <td></td>
+        </tr>`;
+      }
+
       if (isFolder) {
-        return `<tr class="file-row" onclick="handleRowClick(event,'${k}')">
+        return `<tr class="file-row" onclick="handleRowClick(event,'${k}')" ondragover="handleFolderDragOver(event)" ondragleave="handleFolderDragLeave(event)" ondrop="handleFolderDrop(event,'${k}')">
           <td class="col-chk" onclick="event.stopPropagation()">
             <!-- No checkbox for folders -->
           </td>
@@ -1730,7 +2022,7 @@
             <div class="fname-cell">
               ${getFileIcon(f.key, 28)}
               <div style="min-width:0">
-                <div class="fname-text" style="font-weight: 600;" title="${name}">${name}</div>
+                <div class="fname-text" style="font-weight: 600;" title="${safeName}">${safeName}</div>
               </div>
             </div>
           </td>
@@ -1738,7 +2030,7 @@
           <td class="col-date" style="color:var(--text-secondary);font-size:0.78rem;white-space:nowrap">${formatDate(f.uploaded)}</td>
           <td class="col-status">-</td>
           <td onclick="event.stopPropagation()">
-            <div class="row-actions">
+            <div class="row-actions admin-only">
               <button class="act-btn del" onclick="confirmDelete('${k}')" title="删除文件夹">
                 <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
@@ -1752,11 +2044,27 @@
       const tagsHtml = tags.map(t => {
         const def = getTagDef(t);
         return `<span class="tag-chip" style="color:${def.color};border-color:${def.color}55;background:${def.color}15">
-          <span class="tag-chip-dot" style="background:${def.color}"></span>${t}
+          <span class="tag-chip-dot" style="background:${def.color}"></span>${escapeHtml(t)}
         </span>`;
       }).join('');
 
-      return `<tr class="file-row ${sel?'selected':''}" onclick="handleRowClick(event,'${k}')">
+      const dragAttrs = isViewer() ? '' : `draggable="true" ondragstart="handleFileDragStart(event,'${k}')"`;
+      const quickTagButton = isViewer() ? '' : `<button class="quick-tag-add-btn" onclick="showQuickTagPicker(event, '${k}')" title="快速打标签">+</button>`;
+      const adminRowActions = isViewer() ? '' : `
+            <button class="act-btn" onclick="openTagPickerModal('${k}')" title="打标签" style="color:var(--accent-gold)">
+              <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            </button>
+            <button class="act-btn sh" onclick="shareFile('${k}')" title="生成10分钟签名分享链接">
+              <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
+            <button class="act-btn gl ${pub?'on':''}" onclick="openPublicModal('${k}')" title="永久公开链接">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+            </button>
+            <button class="act-btn del" onclick="confirmDelete('${k}')" title="删除">
+              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>`;
+
+      return `<tr class="file-row ${sel?'selected':''}" ${dragAttrs} onclick="handleRowClick(event,'${k}')">
         <td class="col-chk" onclick="event.stopPropagation()">
           <input type="checkbox" ${sel?'checked':''} onchange="toggleSelectFile('${k}',this.checked)">
         </td>
@@ -1764,10 +2072,10 @@
           <div class="fname-cell">
             ${getFileIcon(f.key, 28)}
             <div style="min-width:0">
-              <div class="fname-text" title="${name}">${name}</div>
+              <div class="fname-text" title="${safeName}">${safeName}</div>
               <div class="tag-chips-row" onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap;margin-top:0.25rem;">
                 ${tagsHtml}
-                <button class="quick-tag-add-btn" onclick="showQuickTagPicker(event, '${k}')" title="快速打标签">+</button>
+                ${quickTagButton}
               </div>
             </div>
           </div>
@@ -1781,21 +2089,10 @@
         </td>
         <td onclick="event.stopPropagation()">
           <div class="row-actions">
-            <button class="act-btn" onclick="openTagPickerModal('${k}')" title="打标签" style="color:var(--accent-gold)">
-              <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            </button>
             <button class="act-btn dl" onclick="downloadFile('${k}')" title="下载">
               <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
-            <button class="act-btn sh" onclick="shareFile('${k}')" title="生成10分钟签名分享链接">
-              <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            </button>
-            <button class="act-btn gl ${pub?'on':''}" onclick="openPublicModal('${k}')" title="永久公开链接">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-            </button>
-            <button class="act-btn del" onclick="confirmDelete('${k}')" title="删除">
-              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
+            ${adminRowActions}
           </div>
         </td>
       </tr>`;
@@ -2106,14 +2403,19 @@
     // ============================================================
     function showToast(msg, type='info') {
       const c = document.getElementById('toast-container');
+      while (c.children.length >= 4) c.firstElementChild.remove();
       const t = document.createElement('div');
       t.className = `toast ${type}`;
+      t.setAttribute('role', type === 'error' ? 'alert' : 'status');
       const svgs = {
         success: `<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
         error:   `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
         info:    `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
       };
-      t.innerHTML = (svgs[type]||svgs.info) + `<span>${msg}</span>`;
+      t.innerHTML = svgs[type] || svgs.info;
+      const message = document.createElement('span');
+      message.textContent = String(msg);
+      t.appendChild(message);
       c.appendChild(t);
       setTimeout(()=>{
         t.style.animation='toastIn 0.28s reverse forwards';
@@ -2145,51 +2447,123 @@
     // AUTH
     // ============================================================
     async function attemptAuth() {
-      const pw = document.getElementById('auth-password').value;
-      if (!pw) return;
+      const credential = document.getElementById('auth-password').value.trim();
+      const rememberAdmin = document.getElementById('auth-public-mode').checked;
+      if (!credential) return;
       try {
         const r = await fetch('/api/auth', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ password: pw })
+          body: JSON.stringify({ credential })
         });
         if (r.ok) {
-          localStorage.setItem('auth_token', pw);
+          const data = await r.json();
+          authRole = data.role;
+          viewerExpiresAt = Number(data.expiresAt || 0);
+          clearStoredAuth();
+
+          if (authRole === 'viewer') {
+            sessionStorage.setItem('auth_token', data.token);
+            sessionStorage.setItem('auth_role', 'viewer');
+            sessionStorage.setItem('auth_expires', String(viewerExpiresAt));
+            resetInactivityTimer();
+          } else {
+            const store = rememberAdmin ? localStorage : sessionStorage;
+            store.setItem('auth_token', credential);
+            store.setItem('auth_role', 'admin');
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+          }
+          document.getElementById('auth-password').value = '';
           document.getElementById('auth-overlay').classList.add('hidden');
+          applyAccessRole();
           await initDashboard();
         } else {
-          showToast('密码错误，请重试', 'error');
+          const data = await r.json().catch(()=>({}));
+          showToast(r.status === 429 ? '尝试次数过多，请稍后再试' : '密码或访问码无效', 'error');
           document.getElementById('auth-password').value='';
         }
       } catch(e){ showToast('连接失败: '+e.message,'error'); }
     }
 
     async function checkAuth() {
-      const token = localStorage.getItem('auth_token');
+      const token = getToken();
       if (!token) return;
+
+      authRole = sessionStorage.getItem('auth_role') || localStorage.getItem('auth_role') || 'admin';
+      viewerExpiresAt = Number(sessionStorage.getItem('auth_expires') || 0);
+      if (authRole === 'viewer') {
+        document.getElementById('auth-public-mode').checked = false;
+        resetInactivityTimer();
+      } else {
+        document.getElementById('auth-public-mode').checked = Boolean(localStorage.getItem('auth_token'));
+      }
+
       try {
         const r = await fetch('/api/list', { headers: getHeaders() });
         if (r.status === 401) { logout(); return; }
         if (r.ok) {
           document.getElementById('auth-overlay').classList.add('hidden');
+          applyAccessRole();
           await initDashboard();
         }
-      } catch(e){}
+      } catch(e){ showToast('无法连接文件库，请检查网络后重试', 'error'); }
     }
 
-    function logout() {
-      localStorage.removeItem('auth_token');
+    async function logout() {
+      try { await fetch('/api/logout', { method:'POST', keepalive:true }); } catch {}
+      clearStoredAuth();
       location.reload();
     }
 
-    function getHeaders() {
-      return { 'Authorization': localStorage.getItem('auth_token') || '' };
+    function clearStoredAuth() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_role');
+      sessionStorage.removeItem('auth_token');
+      sessionStorage.removeItem('auth_role');
+      sessionStorage.removeItem('auth_expires');
     }
+
+    function getToken() {
+      return sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token') || '';
+    }
+
+    function getHeaders() {
+      const token = getToken();
+      return { 'Authorization': authRole === 'viewer' ? `Bearer ${token}` : token };
+    }
+
+    function isViewer() {
+      return authRole === 'viewer';
+    }
+
+    function applyAccessRole() {
+      document.body.classList.toggle('viewer-mode', isViewer());
+      const banner = document.getElementById('viewer-banner');
+      if (banner) banner.style.display = isViewer() ? 'flex' : 'none';
+      if (isViewer()) {
+        const expiry = document.getElementById('viewer-expiry');
+        if (expiry && viewerExpiresAt) expiry.textContent = `有效至 ${formatDate(viewerExpiresAt)}`;
+        currentNav = 'all';
+      }
+    }
+
+    let inactivityTimer = null;
+    function resetInactivityTimer() {
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      if (isViewer() && sessionStorage.getItem('auth_token')) {
+        inactivityTimer = setTimeout(logout, 20 * 60 * 1000);
+      }
+    }
+    ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+      document.addEventListener(evt, resetInactivityTimer, true);
+    });
 
     // ============================================================
     // INIT DASHBOARD
     // ============================================================
     async function initDashboard() {
-      await Promise.all([loadFiles(), loadSyncList(), loadTagData()]);
+      const tasks = [loadFiles(), loadTagData()];
+      if (!isViewer()) tasks.push(loadSyncList());
+      await Promise.all(tasks);
       // Restore view
       if (currentView !== 'list') setView(currentView);
     }
@@ -2199,23 +2573,36 @@
     // ============================================================
     async function loadFiles() {
       try {
-        const [fr, pr] = await Promise.all([
-          fetch('/api/list', { headers: getHeaders() }),
-          fetch('/api/public-list', { headers: getHeaders() })
-        ]);
-        if (fr.status === 401 || pr.status === 401) { logout(); return; }
-        if (fr.ok && pr.ok) {
+        const fr = await fetch('/api/list', { headers: getHeaders() });
+        if (fr.status === 401) { logout(); return; }
+        if (fr.ok) {
           const fd = await fr.json();
-          const pd = await pr.json();
           allFiles    = (fd.files || []).filter(f => !f.key.startsWith('.config/') && !f.key.startsWith('.history/'));
-          publicFiles = pd.publicFiles || [];
+          if (!isViewer()) {
+            const pr = await fetch('/api/public-list', { headers: getHeaders() });
+            if (pr.ok) {
+              const pd = await pr.json();
+              publicFiles = pd.publicFiles || [];
+            }
+          } else {
+            publicFiles = [];
+          }
           updateStorage();
           renderContent();
-          renderSharedView();
+          if (!isViewer()) renderSharedView();
+          setConnectionStatus(true);
         } else {
           showToast('获取文件列表失败', 'error');
+          setConnectionStatus(false);
         }
-      } catch(e){ showToast('网络异常: '+e.message,'error'); }
+      } catch(e){ showToast('网络异常: '+e.message,'error'); setConnectionStatus(false); }
+    }
+
+    function setConnectionStatus(connected) {
+      const text = document.querySelector('.status-text');
+      const dot = document.querySelector('.status-dot');
+      if (text) text.textContent = connected ? 'Cloudflare R2 连接正常' : '连接异常，请刷新重试';
+      if (dot) dot.style.background = connected ? 'var(--accent-emerald)' : 'var(--accent-rose)';
     }
 
     function updateStorage() {
@@ -2229,6 +2616,7 @@
     // NAV VIEW SWITCHING (sidebar)
     // ============================================================
     function setNavView(name) {
+      if (isViewer() && !['all', 'tag'].includes(name)) return;
       currentNav = name;
       activeTagFilter = null; // reset tag filter when navigating to other views
       currentPath = ''; // clear virtual folder path
@@ -2248,7 +2636,7 @@
       if (panel) panel.classList.add('active');
 
       // Breadcrumb
-      const labels = { all:'全部文件', shared:'公开分享', sync:'GitHub 订阅' };
+      const labels = { all:'全部文件', shared:'公开分享', sync:'GitHub 订阅', access:'客户访问' };
       const bLabel = document.getElementById('breadcrumb-label');
       if (bLabel) bLabel.textContent = labels[name]||'全部文件';
 
@@ -2257,6 +2645,7 @@
 
       // Hide search bar on non-all views
       document.getElementById('search-input').style.display = name==='all' ? '' : 'none';
+      document.querySelector('.topbar-search-wrap').style.display = name==='all' ? '' : 'none';
 
       // Close panels and clear selections
       closeContextPanel();
@@ -2265,6 +2654,7 @@
       // View-specific renders
       if (name === 'sync') renderSyncList();
       if (name === 'shared') renderSharedView();
+      if (name === 'access') loadAccessCodes();
 
       // Close sidebar on mobile
       if (window.innerWidth <= 800) closeSidebar();
@@ -2331,13 +2721,14 @@
               <polyline points="13 2 13 9 20 9"/>
             </svg>
             <div class="empty-title">暂无内容</div>
-            <div class="empty-desc">上传文件或新建文件夹</div>
+            <div class="empty-desc">${isViewer() ? '当前没有可下载的文件' : '上传文件或新建文件夹'}</div>
           </div>
         </td></tr>`;
         return;
       }
 
       tbody.innerHTML = files.map(f => buildFileRow(f)).join('');
+      updateSelectAllState();
     }
 
     function renderGridView(files) {
@@ -2347,7 +2738,7 @@
       if (!files.length) {
         container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
           <div class="empty-title">暂无内容</div>
-          <div class="empty-desc">上传文件或新建文件夹</div>
+          <div class="empty-desc">${isViewer() ? '当前没有可下载的文件' : '上传文件或新建文件夹'}</div>
         </div>`;
         return;
       }
@@ -2355,15 +2746,26 @@
       container.innerHTML = files.map(f => {
         const isFolder = f.isFolder || f.key.endsWith('/');
         const name = f.name || f.key;
+        const safeName = escapeHtml(name);
         const k = ek(f.key);
         const sel = selectedFiles.has(f.key);
 
-        if (isFolder) {
-          return `<div class="grid-card" onclick="handleGridClick(event,'${k}')">
-            <div class="grid-icon" style="margin-top: 0.5rem;">${getFileIcon(f.key, 48)}</div>
-            <div class="grid-name" style="font-weight:600;margin-top:0.4rem;" title="${name}">${name}</div>
+        if (f.isParentDir) {
+          return `<div class="grid-card" onclick="navigateToPath('${k}')">
+            <div class="grid-icon" style="margin-top: 0.5rem;">
+              <svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:var(--accent-gold);fill:none;stroke-width:2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </div>
+            <div class="grid-name" style="font-weight:600;margin-top:0.4rem;color:var(--accent-gold);" title="${safeName}">${safeName}</div>
             <div class="grid-size">-</div>
-            <div class="grid-actions">
+          </div>`;
+        }
+
+        if (isFolder) {
+          return `<div class="grid-card" onclick="handleGridClick(event,'${k}')" ondragover="handleFolderDragOver(event)" ondragleave="handleFolderDragLeave(event)" ondrop="handleFolderDrop(event,'${k}')">
+            <div class="grid-icon" style="margin-top: 0.5rem;">${getFileIcon(f.key, 48)}</div>
+            <div class="grid-name" style="font-weight:600;margin-top:0.4rem;" title="${safeName}">${safeName}</div>
+            <div class="grid-size">-</div>
+            <div class="grid-actions admin-only">
               <button class="act-btn del" onclick="event.stopPropagation();confirmDelete('${k}')" title="删除文件夹">
                 <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
@@ -2376,33 +2778,39 @@
         const tagsHtml = tags.map(t => {
           const def = getTagDef(t);
           return `<span class="tag-chip" style="font-size: 0.65rem; padding: 0.05rem 0.3rem; color:${def.color};border-color:${def.color}55;background:${def.color}15">
-            <span class="tag-chip-dot" style="width:4px;height:4px;background:${def.color}"></span>${t}
+            <span class="tag-chip-dot" style="width:4px;height:4px;background:${def.color}"></span>${escapeHtml(t)}
           </span>`;
         }).join('');
 
-        return `<div class="grid-card ${sel?'selected':''}" onclick="handleGridClick(event,'${k}')">
+        const gridDragAttrs = isViewer() ? '' : `draggable="true" ondragstart="handleFileDragStart(event,'${k}')"`;
+        const gridQuickTag = isViewer() ? '' : `<button class="quick-tag-add-btn" onclick="showQuickTagPicker(event, '${k}')" title="快速打标签">+</button>`;
+        const gridAdminActions = isViewer() ? '' : `
+            <button class="act-btn gl ${pub?'on':''}" onclick="event.stopPropagation();openPublicModal('${k}')" title="公开链接">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+            </button>
+            <button class="act-btn del" onclick="event.stopPropagation();confirmDelete('${k}')" title="删除">
+              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>`;
+
+        return `<div class="grid-card ${sel?'selected':''}" ${gridDragAttrs} onclick="handleGridClick(event,'${k}')">
           <input type="checkbox" class="grid-chk" ${sel?'checked':''} onclick="event.stopPropagation()" onchange="toggleSelectFile('${k}',this.checked)">
           <div class="grid-icon">${getFileIcon(f.key, 48)}</div>
-          <div class="grid-name" title="${name}">${name}</div>
+          <div class="grid-name" title="${safeName}">${safeName}</div>
           <div class="grid-size">${formatBytes(f.size)}</div>
           <div class="tag-chips-row" onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap;margin-top:0.4rem;min-height:18px;justify-content:center;width:100%;">
             ${tagsHtml}
-            <button class="quick-tag-add-btn" onclick="showQuickTagPicker(event, '${k}')" title="快速打标签">+</button>
+            ${gridQuickTag}
           </div>
           ${pub?`<div class="grid-public-badge">🌐 公开</div>`:''}
           <div class="grid-actions">
             <button class="act-btn dl" onclick="event.stopPropagation();downloadFile('${k}')" title="下载">
               <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
-            <button class="act-btn gl ${pub?'on':''}" onclick="event.stopPropagation();openPublicModal('${k}')" title="公开链接">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-            </button>
-            <button class="act-btn del" onclick="event.stopPropagation();confirmDelete('${k}')" title="删除">
-              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
+            ${gridAdminActions}
           </div>
         </div>`;
       }).join('');
+      updateSelectAllState();
     }
 
     // ============================================================
@@ -2489,7 +2897,9 @@
     function openContextPanel(file) {
       contextFile = file;
       const panel = document.getElementById('context-panel');
-      const body  = document.getElementById('panel-body');
+      const overlay = document.getElementById('context-overlay');
+      if (window.innerWidth <= 800 && overlay) overlay.classList.add('on');
+      panel.classList.add('open');
       const pub   = publicFiles.includes(file.key);
       const k     = ek(file.key);
       const url   = `${location.origin}/f/${k}`;
@@ -2500,14 +2910,14 @@
         ? tags.map(t => {
             const def = getTagDef(t);
             return `<span class="tag-chip" style="color:${def.color};border-color:${def.color}55;background:${def.color}15">
-              <span class="tag-chip-dot" style="background:${def.color}"></span>${t}
+              <span class="tag-chip-dot" style="background:${def.color}"></span>${escapeHtml(t)}
             </span>`;
           }).join('')
         : `<span style="font-size:0.75rem;color:var(--text-secondary)">暂无标签</span>`;
 
-      body.innerHTML = `
+      document.getElementById('panel-body').innerHTML = `
         <div class="panel-icon-lg">${getFileIcon(file.key, 64)}</div>
-        <div class="panel-fname">${file.key}</div>
+        <div class="panel-fname">${escapeHtml(file.key)}</div>
         <div class="panel-props">
           <div class="panel-prop">
             <span class="prop-label">文件大小</span>
@@ -2521,7 +2931,7 @@
             <span class="prop-label">文件类型</span>
             <span class="prop-val">${getFileType(file.key).toUpperCase()}</span>
           </div>
-          <div class="panel-prop">
+          <div class="panel-prop admin-only">
             <span class="prop-label">公开状态</span>
             <span class="prop-val">${pub?'<span style="color:var(--accent-emerald)">🌐 公开</span>':'<span style="color:var(--text-secondary)">🔒 私有</span>'}</span>
           </div>
@@ -2529,14 +2939,14 @@
             <span class="prop-label">标签</span>
             <div style="display:flex;flex-wrap:wrap;gap:0.25rem;align-items:center">${tagChipsHtml}</div>
           </div>
-          ${pub ? `<div class="panel-prop" style="flex-direction:column;align-items:flex-start;gap:0.3rem">
+          ${pub ? `<div class="panel-prop admin-only" style="flex-direction:column;align-items:flex-start;gap:0.3rem">
             <span class="prop-label">公开直链</span>
             <input class="panel-public-url" type="text" value="${url}" readonly onclick="this.select()">
           </div>` : ''}
         </div>
         <div class="panel-divider"></div>
         <div class="panel-actions">
-          <button class="panel-btn gold" onclick="openTagPickerModal('${k}')">
+          <button class="panel-btn gold admin-only" onclick="openTagPickerModal('${k}')">
             <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             ${tags.length ? '管理标签' : '添加标签'}
           </button>
@@ -2544,19 +2954,19 @@
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             下载文件
           </button>
-          <button class="panel-btn" onclick="openMoveFileModal('${k}')">
+          <button class="panel-btn admin-only" onclick="openMoveFileModal('${k}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
             移动 / 重命名
           </button>
-          <button class="panel-btn" onclick="shareFile('${k}')">
+          <button class="panel-btn admin-only" onclick="shareFile('${k}')">
             <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             生成10 分钟分享链接
           </button>
-          <button class="panel-btn ${pub?'':'gold'}" onclick="openPublicModal('${k}')">
+          <button class="panel-btn admin-only ${pub?'':'gold'}" onclick="openPublicModal('${k}')">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
             ${pub ? '管理永久公开链接' : '开启永久公开链接'}
           </button>
-          <button class="panel-btn danger" onclick="confirmDelete('${k}')">
+          <button class="panel-btn danger admin-only" onclick="confirmDelete('${k}')">
             <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             永久删除此文件
           </button>
@@ -2567,6 +2977,7 @@
 
     function closeContextPanel() {
       document.getElementById('context-panel').classList.remove('open');
+      document.getElementById('context-overlay').classList.remove('on');
       contextFile = null;
     }
 
@@ -2581,28 +2992,43 @@
     }
 
     function toggleSelectAll(cb) {
-      const q = document.getElementById('search-input').value.toLowerCase().trim();
-      const filtered = allFiles.filter(f => f.key.toLowerCase().includes(q));
-      cb.checked ? filtered.forEach(f => selectedFiles.add(f.key)) : filtered.forEach(f => selectedFiles.delete(f.key));
+      const visibleFiles = getVisibleSelectableFiles();
+      cb.checked ? visibleFiles.forEach(f => selectedFiles.add(f.key)) : visibleFiles.forEach(f => selectedFiles.delete(f.key));
       renderContent();
       updateBatchBar();
     }
 
     function updateSelectAllState() {
-      const cb = document.getElementById('select-all-chk');
-      if (!cb) return;
+      const visibleFiles = getVisibleSelectableFiles();
+      const allSel = visibleFiles.length > 0 && visibleFiles.every(f => selectedFiles.has(f.key));
+      const someSel = visibleFiles.some(f => selectedFiles.has(f.key));
+      ['select-all-chk', 'tag-select-all'].forEach(id => {
+        const cb = document.getElementById(id);
+        if (!cb) return;
+        cb.checked = allSel;
+        cb.indeterminate = !allSel && someSel;
+      });
+    }
+
+    function getVisibleSelectableFiles() {
       const q = document.getElementById('search-input').value.toLowerCase().trim();
-      const filtered = allFiles.filter(f => f.key.toLowerCase().includes(q));
-      const allSel = filtered.length && filtered.every(f => selectedFiles.has(f.key));
-      const someSel = selectedFiles.size > 0;
-      cb.checked = allSel;
-      cb.indeterminate = !allSel && someSel;
+      if (currentNav === 'tag' && activeTagFilter) {
+        return getFilesForTag(activeTagFilter).filter(f => !f.key.endsWith('/') && f.key.toLowerCase().includes(q));
+      }
+      if (q) return allFiles.filter(f => !f.key.endsWith('/') && f.key.toLowerCase().includes(q));
+      return getItemsInCurrentPath(allFiles).filter(f => !f.isParentDir && !f.isFolder && !f.key.endsWith('/'));
+    }
+
+    function handleSearchInput() {
+      selectedFiles.clear();
+      updateBatchBar();
+      renderContent();
     }
 
     function clearSelection() {
       selectedFiles.clear();
       updateBatchBar();
-      renderContent();
+      if (currentNav === 'all' || currentNav === 'tag') renderContent();
     }
 
     function updateBatchBar() {
@@ -2617,11 +3043,21 @@
     // ============================================================
     async function batchDownload() {
       if (!selectedFiles.size) return;
-      showToast(`开始下载 ${selectedFiles.size} 个文件...`, 'info');
-      for (const k of selectedFiles) {
-        await new Promise(r => setTimeout(r, 250));
-        downloadFile(ek(k));
+      const keys = [...selectedFiles].filter(k => !k.endsWith('/') && allFiles.some(file => file.key === k));
+      const count = keys.length;
+      if (!count) return;
+      showToast(`正在启动 ${count} 个文件的安全顺序下载...`, 'info');
+      let started = 0;
+      for (const k of keys) {
+        try {
+          const downloadUrl = await getDownloadUrl(k);
+          if (!downloadUrl) continue;
+          triggerBrowserDownload(downloadUrl, k);
+          started++;
+          await new Promise(r => setTimeout(r, 650));
+        } catch {}
       }
+      showToast(`已启动 ${started}/${count} 个文件下载${started > 1 ? '；如浏览器询问，请允许多文件下载' : ''}`, started === count ? 'success' : 'error');
     }
 
     async function batchShare() {
@@ -2697,14 +3133,83 @@
     }
 
     function triggerUpload() {
+      if (isViewer()) return;
       document.getElementById('file-input').click();
       if (window.innerWidth <= 800) closeSidebar();
     }
 
     // ============================================================
-    // DRAG & DROP
+    // DRAG-TO-FOLDER MOVE HANDLERS
+    // ============================================================
+    let draggedFileKey = null;
+
+    function handleFileDragStart(event, keyParam) {
+      if (isViewer()) return;
+      draggedFileKey = dk(keyParam);
+      event.dataTransfer.setData('text/plain', draggedFileKey);
+      event.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleFolderDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      const target = event.currentTarget;
+      if (target && !target.classList.contains('drag-over')) {
+        target.classList.add('drag-over');
+      }
+    }
+
+    function handleFolderDragLeave(event) {
+      const target = event.currentTarget;
+      if (target) {
+        target.classList.remove('drag-over');
+      }
+    }
+
+    async function handleFolderDrop(event, folderKeyParam) {
+      if (isViewer()) return;
+      event.preventDefault();
+      const target = event.currentTarget;
+      if (target) target.classList.remove('drag-over');
+
+      const targetFolderKey = dk(folderKeyParam);
+      const srcKey = draggedFileKey || event.dataTransfer.getData('text/plain');
+      draggedFileKey = null;
+
+      if (!srcKey || srcKey.endsWith('/') || srcKey === targetFolderKey) return;
+
+      const fileName = srcKey.split('/').pop();
+      const targetKey = targetFolderKey + fileName;
+
+      if (srcKey === targetKey) return;
+      if (allFiles.some(file => file.key === targetKey)) {
+        showToast('目标文件夹已有同名文件，请先重命名', 'error');
+        return;
+      }
+
+      try {
+        const r = await fetch('/api/rename', {
+          method: 'POST',
+          headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fromKey: srcKey, toKey: targetKey })
+        });
+        if (r.ok) {
+          showToast(`已将「${fileName}」移动至文件夹`, 'success');
+          await loadFiles();
+          closeContextPanel();
+        } else {
+          showToast('移动文件失败', 'error');
+        }
+      } catch (e) {
+        showToast('请求异常: ' + e.message, 'error');
+      }
+    }
+
+    // ============================================================
+    // FULLSCREEN DRAG & DROP
     // ============================================================
     document.addEventListener('dragenter', e => {
+      if (isViewer() || draggedFileKey || !Array.from(e.dataTransfer?.types || []).includes('Files')) return;
       e.preventDefault(); dragCount++;
       document.getElementById('drag-overlay').classList.add('on');
     });
@@ -2715,20 +3220,48 @@
     document.addEventListener('drop', e => {
       e.preventDefault(); dragCount=0;
       document.getElementById('drag-overlay').classList.remove('on');
+      if (isViewer()) return;
       const files = e.dataTransfer.files;
-      for (const f of files) startUpload(f);
+      if (files?.length) {
+        for (const f of files) uploadQueue.push(f);
+        if (!isUploading) processUploadQueue();
+      }
     });
 
     // ============================================================
-    // UPLOAD
+    // UPLOAD QUEUE & UPLOAD HANDLERS
     // ============================================================
+    let uploadQueue = [];
+    let isUploading = false;
+
     function handleFileSelect(e) {
+      if (isViewer()) return;
       if (!e.target.files?.length) return;
-      for (const f of e.target.files) startUpload(f);
+      for (const f of e.target.files) uploadQueue.push(f);
       e.target.value = '';
+      if (!isUploading) processUploadQueue();
     }
 
-    async function startUpload(file) {
+    async function processUploadQueue() {
+      if (!uploadQueue.length) {
+        isUploading = false;
+        return;
+      }
+      isUploading = true;
+      const totalCount = uploadQueue.length;
+      let currentIndex = 0;
+
+      while (uploadQueue.length > 0) {
+        currentIndex++;
+        const file = uploadQueue.shift();
+        await startSingleFileUpload(file, currentIndex, totalCount);
+      }
+
+      isUploading = false;
+      await loadFiles();
+    }
+
+    async function startSingleFileUpload(file, currentIdx = 1, totalCount = 1) {
       const card  = document.getElementById('upload-progress-card');
       const fill  = document.getElementById('progress-bar-fill');
       const fname = document.getElementById('progress-filename');
@@ -2737,7 +3270,7 @@
       const spd   = document.getElementById('progress-speed');
 
       card.style.display = 'block';
-      fname.textContent = file.name;
+      fname.textContent = totalCount > 1 ? `[${currentIdx}/${totalCount}] ${file.name}` : file.name;
       pct.textContent   = '0%';
       stat.textContent  = '初始化...';
       fill.style.width  = '0%';
@@ -2746,10 +3279,19 @@
       let uploadId, uploadKey;
 
       try {
+        const targetKey = currentPath + file.name;
+        const alreadyExists = allFiles.some(existing => existing.key === targetKey);
+        if (alreadyExists && !confirm(`「${file.name}」已存在，是否覆盖？`)) {
+          stat.textContent = '已跳过同名文件';
+          showToast(`已跳过「${file.name}」`, 'info');
+          if (uploadQueue.length === 0) setTimeout(() => { card.style.display='none'; }, 1400);
+          return;
+        }
         const initR = await fetch('/api/upload-init', {
           method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
-          body: JSON.stringify({ filename: currentPath + file.name, contentType: file.type||'application/octet-stream' })
+          body: JSON.stringify({ filename: targetKey, contentType: file.type||'application/octet-stream', overwrite: alreadyExists })
         });
+        if (initR.status === 409) throw new Error('同名文件已存在，请刷新后重试');
         if (!initR.ok) throw new Error('初始化上传失败');
         const initD = await initR.json();
         uploadId  = initD.uploadId;
@@ -2789,13 +3331,16 @@
         stat.textContent = '✓ 上传成功！';
         fill.style.width = '100%'; pct.textContent = '100%';
         showToast(`「${file.name}」上传成功`, 'success');
-        setTimeout(() => { card.style.display='none'; }, 2200);
-        await loadFiles();
+        if (uploadQueue.length === 0) {
+          setTimeout(() => { card.style.display='none'; }, 2200);
+        }
 
       } catch(e) {
         stat.textContent = '✕ ' + e.message;
         showToast('上传失败: '+e.message, 'error');
-        setTimeout(()=>{ card.style.display='none'; }, 3000);
+        if (uploadQueue.length === 0) {
+          setTimeout(()=>{ card.style.display='none'; }, 3000);
+        }
       }
     }
 
@@ -2866,22 +3411,44 @@
       const container = document.querySelector('.topbar-breadcrumb');
       if (!container) return;
       
-      let html = `<span id="breadcrumb-label" onclick="navigateToPath('')" style="cursor:pointer;color:var(--text-primary)">全部文件</span>`;
-      if (currentPath) {
+      const labels = { all: '全部文件', shared: '公开分享', sync: 'GitHub 订阅', tag: '标签分类' };
+      const currentTitle = labels[currentNav] || '全部文件';
+
+      let html = `<span id="breadcrumb-label" class="crumb-item" onclick="navigateToPath('')" style="color:var(--accent-gold);font-weight:600">${currentTitle}</span>`;
+      if (currentNav === 'all' && currentPath) {
         const parts = currentPath.split('/').filter(Boolean);
         let cumulativePath = '';
-        parts.forEach((part) => {
+        parts.forEach((part, idx) => {
           cumulativePath += part + '/';
-          html += ` <span style="color:var(--text-secondary);margin:0 2px;">/</span> <span onclick="navigateToPath('${cumulativePath}')" style="cursor:pointer;color:var(--text-primary)">${part}</span>`;
+          const isLast = idx === parts.length - 1;
+          html += ` <span style="color:var(--text-secondary);margin:0 2px;">/</span> <span class="crumb-item" onclick="navigateToPath(dk('${ek(cumulativePath)}'))" style="color:${isLast ? 'var(--text-primary)' : 'var(--accent-gold)'}">${escapeHtml(part)}</span>`;
         });
       }
-      html += ` <span class="topbar-badge" id="file-count-badge">0 个</span>`;
+      const countEl = document.getElementById('file-count-badge');
+      const countText = countEl ? countEl.textContent : '0 个';
+      html += ` <span class="topbar-badge" id="file-count-badge">${countText}</span>`;
       container.innerHTML = html;
     }
 
     function getItemsInCurrentPath(files) {
       const folders = new Map();
       const items = [];
+
+      // 如果位于子目录下，最上方插入虚拟 ".." 返回上级目录项
+      if (currentPath) {
+        const parts = currentPath.slice(0, -1).split('/');
+        parts.pop();
+        const parentPath = parts.length ? parts.join('/') + '/' : '';
+        folders.set('..', {
+          key: parentPath,
+          name: '.. (返回上级)',
+          size: 0,
+          uploaded: new Date().toISOString(),
+          isFolder: true,
+          isParentDir: true
+        });
+      }
+
       files.forEach(f => {
         if (!f.key.startsWith(currentPath)) return;
         if (f.key === currentPath) return; // skip self placeholder
@@ -2894,6 +3461,7 @@
           if (!folders.has(folderName)) {
             folders.set(folderName, {
               key: folderKey,
+              name: folderName + '/',
               size: 0,
               uploaded: f.uploaded,
               isFolder: true
@@ -2997,12 +3565,33 @@
     document.addEventListener('click', closeAllQuickTagPickers);
     document.addEventListener('scroll', closeAllQuickTagPickers, true);
 
-    function downloadFile(keyParam) {
+    async function downloadFile(keyParam) {
       const k = dk(keyParam);
       if (k.endsWith('/')) return; // Can't download directory directly
+      const url = await getDownloadUrl(k);
+      if (!url) return;
+      triggerBrowserDownload(url, k);
+    }
+
+    async function getDownloadUrl(key) {
+      if (isViewer()) return `/api/download?key=${ek(key)}`;
+      try {
+        const response = await fetch(`/api/download-ticket?key=${ek(key)}`, { headers:getHeaders() });
+        if (response.status === 401) { logout(); return ''; }
+        if (!response.ok) { showToast('无法创建安全下载链接', 'error'); return ''; }
+        const data = await response.json();
+        return data.url || '';
+      } catch (error) {
+        showToast('下载准备失败: ' + error.message, 'error');
+        return '';
+      }
+    }
+
+    function triggerBrowserDownload(url, key) {
       const a = document.createElement('a');
-      a.href     = `/api/download?key=${keyParam}&token=${localStorage.getItem('auth_token')}`;
-      a.download = k;
+      a.href = url;
+      a.download = key.split('/').pop() || key;
+      a.style.display = 'none';
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
 
@@ -3056,11 +3645,19 @@
         showToast('文件名不能为空', 'error');
         return;
       }
+      if (/[\\/]/.test(targetName) || targetName === '.' || targetName === '..') {
+        showToast('文件名不能包含斜杠，也不能使用 . 或 ..', 'error');
+        return;
+      }
 
       const targetKey = targetFolder + targetName;
       if (targetKey === moveSrcKey) {
         showToast('目标路径与原路径相同', 'info');
         closeMoveFileModal();
+        return;
+      }
+      if (allFiles.some(file => file.key === targetKey)) {
+        showToast('目标位置已有同名文件，请更换名称', 'error');
         return;
       }
 
@@ -3083,6 +3680,74 @@
         showToast('请求异常: ' + e.message, 'error');
       }
     }
+
+    async function promptNewFolderInMoveModal() {
+      const folderName = prompt('请输入新目标文件夹名称 (例如: docs):');
+      if (!folderName || !folderName.trim()) return;
+      const cleanName = folderName.trim().replace(/[\/\\]/g, '');
+      if (!cleanName) return;
+
+      const select = document.getElementById('move-target-folder');
+      const currentFolderVal = select.value || '';
+      const newFolderKey = currentFolderVal + cleanName + '/';
+
+      try {
+        const r = await fetch('/api/create-folder', {
+          method: 'POST',
+          headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: newFolderKey })
+        });
+        if (r.ok) {
+          showToast(`文件夹「${cleanName}」创建成功`, 'success');
+          const opt = document.createElement('option');
+          opt.value = newFolderKey;
+          opt.textContent = newFolderKey;
+          select.appendChild(opt);
+          select.value = newFolderKey;
+          await loadFiles();
+        } else {
+          showToast('创建文件夹失败', 'error');
+        }
+      } catch (e) {
+        showToast('创建失败: ' + e.message, 'error');
+      }
+    }
+
+    // ============================================================
+    // GLOBAL KEYBOARD SHORTCUTS
+    // ============================================================
+    document.addEventListener('keydown', e => {
+      const active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+        if (e.key === 'Escape') active.blur();
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        closeConfirmModal();
+        closePublicModal();
+        closeTagMgmtModal();
+        closeTagPickerModal();
+        closeNewFolderModal();
+        closeMoveFileModal();
+        closeContextPanel();
+        clearSelection();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+        if (currentNav === 'all' || currentNav === 'tag') {
+          e.preventDefault();
+          const q = document.getElementById('search-input')?.value.toLowerCase().trim() || '';
+          const filtered = allFiles.filter(f => f.key.toLowerCase().includes(q) && !f.key.endsWith('/'));
+          filtered.forEach(f => selectedFiles.add(f.key));
+          renderContent();
+          updateBatchBar();
+        }
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedFiles.size > 0) {
+          e.preventDefault();
+          batchDelete();
+        }
+      }
+    });
 
     function confirmDelete(keyParam) {
       const k = dk(keyParam);
@@ -3177,6 +3842,194 @@
         } else showToast('操作失败','error');
       } catch(e){ showToast('请求异常: '+e.message,'error'); }
       finally { btn.disabled = false; }
+    }
+
+    // ============================================================
+    // CUSTOMER READ-ONLY ACCESS CODES
+    // ============================================================
+    function toggleCustomAccessExpiry() {
+      const isCustom = document.getElementById('access-expiry-mode').value === 'custom';
+      document.getElementById('access-custom-wrap').style.display = isCustom ? 'flex' : 'none';
+      if (isCustom && !document.getElementById('access-custom-expiry').value) {
+        const defaultTime = new Date(Date.now() + 4 * 60 * 60 * 1000);
+        document.getElementById('access-custom-expiry').value = toBeijingDateTimeInput(defaultTime);
+      }
+    }
+
+    function toBeijingDateTimeInput(date) {
+      const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+        timeZone:'Asia/Shanghai', year:'numeric', month:'2-digit', day:'2-digit',
+        hour:'2-digit', minute:'2-digit', hourCycle:'h23'
+      }).formatToParts(date).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
+      return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+    }
+
+    function getBeijingEndOfDay() {
+      const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+        timeZone:'Asia/Shanghai', year:'numeric', month:'2-digit', day:'2-digit'
+      }).formatToParts(new Date()).filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
+      return Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), 15, 59, 59, 999);
+    }
+
+    function parseBeijingDateTime(value) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value || '');
+      if (!match) return NaN;
+      const [, year, month, day, hour, minute] = match.map(Number);
+      return Date.UTC(year, month - 1, day, hour - 8, minute, 0, 0);
+    }
+
+    function getSelectedAccessExpiry() {
+      const mode = document.getElementById('access-expiry-mode').value;
+      if (mode === 'today') return getBeijingEndOfDay();
+      if (mode === '1h') return Date.now() + 60 * 60 * 1000;
+      if (mode === '4h') return Date.now() + 4 * 60 * 60 * 1000;
+      if (mode === '24h') return Date.now() + 24 * 60 * 60 * 1000;
+      return parseBeijingDateTime(document.getElementById('access-custom-expiry').value);
+    }
+
+    async function createAccessCode() {
+      const expiresAt = getSelectedAccessExpiry();
+      if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+        showToast('请选择未来的到期时间', 'error');
+        return;
+      }
+      if (expiresAt - Date.now() > 30 * 24 * 60 * 60 * 1000) {
+        showToast('访问码最长有效 30 天', 'error');
+        return;
+      }
+
+      const button = document.getElementById('create-access-btn');
+      button.disabled = true;
+      button.textContent = '生成中...';
+      try {
+        const response = await fetch('/api/access-codes', {
+          method:'POST',
+          headers:{ ...getHeaders(), 'Content-Type':'application/json' },
+          body:JSON.stringify({
+            label:document.getElementById('access-label').value.trim(),
+            expiresAt
+          })
+        });
+        const data = await response.json().catch(()=>({}));
+        if (!response.ok) {
+          showToast(data.error === 'Expiry must be within the next 30 days' ? '有效期必须在未来 30 天内' : '访问码生成失败', 'error');
+          return;
+        }
+        document.getElementById('new-access-code').textContent = data.accessCode;
+        document.getElementById('access-code-result').style.display = 'flex';
+        document.getElementById('access-label').value = '';
+        showToast('访问码已生成并加密保存', 'success');
+        await loadAccessCodes();
+      } catch(error) {
+        showToast('生成失败: ' + error.message, 'error');
+      } finally {
+        button.disabled = false;
+        button.textContent = '生成 8 位访问码';
+      }
+    }
+
+    async function copyNewAccessCode() {
+      const code = document.getElementById('new-access-code').textContent.trim();
+      if (!code || code === '--------') return;
+      try {
+        await navigator.clipboard.writeText(code);
+        showToast('访问码已复制', 'success');
+      } catch {
+        showToast('复制失败，请手动选中访问码', 'error');
+      }
+    }
+
+    async function loadAccessCodes() {
+      const container = document.getElementById('access-code-list');
+      if (!container || isViewer()) return;
+      container.innerHTML = '<div class="empty-inline">正在加载...</div>';
+      try {
+        const response = await fetch('/api/access-codes', { headers:getHeaders() });
+        if (response.status === 401) { logout(); return; }
+        if (!response.ok) throw new Error('Request failed');
+        const data = await response.json();
+        accessCodeRecords = data.accessCodes || [];
+        renderAccessCodes();
+      } catch {
+        container.innerHTML = '<div class="empty-inline">加载失败，请点击刷新重试</div>';
+      }
+    }
+
+    function renderAccessCodes() {
+      const container = document.getElementById('access-code-list');
+      if (!container) return;
+      if (!accessCodeRecords.length) {
+        container.innerHTML = '<div class="empty-inline">还没有创建过客户访问码</div>';
+        return;
+      }
+      const statusLabels = { active:'有效', expired:'已到期', revoked:'已撤销' };
+      container.innerHTML = accessCodeRecords.map(record => {
+        const safeLabel = escapeHtml(record.label || '未填写备注');
+        const codeContent = record.codeRecoverable && record.accessCode
+          ? `<div class="access-record-code">${escapeHtml(record.accessCode)}</div>`
+          : `<div class="access-record-code unavailable">旧版访问码无法显示（尾号 ${escapeHtml(record.codeHint || '----')}），请撤销后重新生成</div>`;
+        const copyButton = record.codeRecoverable && record.accessCode
+          ? `<button class="btn btn-secondary" onclick="copyStoredAccessCode('${record.id}')">复制</button>`
+          : '';
+        const revokeButton = record.status === 'active'
+          ? `<button class="btn btn-secondary" onclick="revokeAccessCode('${record.id}')">撤销</button>`
+          : '';
+        return `<div class="access-record">
+          <div>
+            <div class="access-record-title">
+              <span>${safeLabel}</span>
+              <span class="access-status ${record.status}">${statusLabels[record.status] || record.status}</span>
+            </div>
+            ${codeContent}
+          </div>
+          <div class="access-record-meta">
+            创建：${formatBeijingDate(record.createdAt)}<br>
+            到期：${formatBeijingDate(record.expiresAt)}
+          </div>
+          <div class="access-record-actions">${copyButton}${revokeButton}</div>
+        </div>`;
+      }).join('');
+    }
+
+    async function copyStoredAccessCode(id) {
+      const record = accessCodeRecords.find(item => item.id === id);
+      if (!record || !record.accessCode) {
+        showToast('这个访问码无法恢复，请重新生成', 'error');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(record.accessCode);
+        showToast('访问码已复制', 'success');
+      } catch {
+        showToast('复制失败，请手动选中访问码', 'error');
+      }
+    }
+
+    async function revokeAccessCode(id) {
+      if (!confirm('撤销后，使用此访问码的客户会立即失去访问权限。确定撤销吗？')) return;
+      try {
+        const response = await fetch(`/api/access-codes?id=${encodeURIComponent(id)}`, {
+          method:'DELETE', headers:getHeaders()
+        });
+        if (!response.ok) throw new Error('Request failed');
+        showToast('访问码已撤销', 'success');
+        await loadAccessCodes();
+      } catch {
+        showToast('撤销失败，请重试', 'error');
+      }
+    }
+
+    function formatBeijingDate(value) {
+      return new Intl.DateTimeFormat('zh-CN', {
+        timeZone:'Asia/Shanghai', year:'numeric', month:'2-digit', day:'2-digit',
+        hour:'2-digit', minute:'2-digit', hourCycle:'h23'
+      }).format(new Date(value));
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>'"]/g, char => ({
+        '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;'
+      })[char]);
     }
 
     // ============================================================
@@ -3353,8 +4206,7 @@
             const filename = hParts[hParts.length - 1];
             const displayTime = formatDate(item.uploaded);
             
-            const token = localStorage.getItem('auth_token') || '';
-            const downloadUrl = `/api/download?key=${encodeURIComponent(item.key)}&token=${encodeURIComponent(token)}`;
+            const downloadUrl = `/api/download?key=${encodeURIComponent(item.key)}&token=${encodeURIComponent(getToken())}`;
             
             return `
               <div style="display:flex; align-items:center; justify-content:space-between; padding:0.35rem 0.5rem; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); border-radius:6px; font-size:0.75rem; gap:0.5rem;">
@@ -3489,7 +4341,7 @@
     // THEME
     // ============================================================
     function initTheme() {
-      const t = localStorage.getItem('theme')||'dark';
+      const t = localStorage.getItem('theme')||'light';
       t==='light' ? document.documentElement.classList.add('theme-light') : document.documentElement.classList.remove('theme-light');
       updateThemeIcon(t);
     }
