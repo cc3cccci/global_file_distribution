@@ -478,6 +478,56 @@
     }
 
     /* =============================================
+       UPLOAD QUEUE (per-file cards, bottom-right)
+       ============================================= */
+    .upload-queue {
+      position: fixed; right: 1.2rem; bottom: 1.2rem;
+      width: 340px; max-width: calc(100vw - 2rem);
+      max-height: 62vh; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 0.55rem;
+      z-index: 60;
+    }
+    .upload-queue:empty { display: none; }
+    .upload-queue-head {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.72rem; color: var(--text-secondary);
+      background: var(--modal-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border); border-radius: 8px;
+      padding: 0.4rem 0.7rem;
+    }
+    .upload-item {
+      background: var(--modal-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border); border-radius: 10px;
+      padding: 0.6rem 0.8rem;
+      box-shadow: 0 6px 24px var(--modal-shadow);
+    }
+    .upload-item.error { border-color: rgba(244,63,94,0.4); }
+    .upload-item.success { border-color: rgba(16,185,129,0.35); }
+    .upload-item-head {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 0.5rem; font-size: 0.76rem; margin-bottom: 0.4rem;
+    }
+    .upload-item-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .upload-item-pct { flex-shrink: 0; font-weight: 600; color: var(--accent-gold); }
+    .upload-item.error .upload-item-pct { color: var(--accent-rose); }
+    .upload-item.success .upload-item-pct { color: var(--accent-emerald); }
+    .upload-item-meta {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 0.4rem; font-size: 0.67rem; color: var(--text-secondary); gap: 0.5rem;
+    }
+    .upload-item-status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .upload-item-btns { display: flex; gap: 0.3rem; flex-shrink: 0; }
+    .upload-mini-btn {
+      background: transparent; border: 1px solid var(--btn-border);
+      color: var(--text-secondary); border-radius: 5px;
+      padding: 0.12rem 0.5rem; font-size: 0.66rem; cursor: pointer;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .upload-mini-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+    .upload-mini-btn.danger:hover { color: var(--accent-rose); border-color: var(--accent-rose); }
+    .upload-mini-btn.gold { color: var(--accent-gold); border-color: rgba(212,175,55,0.4); }
+
+    /* =============================================
        VIEW PANELS
        ============================================= */
     .view-panel { display: none; }
@@ -1147,8 +1197,12 @@
     <div class="drag-msg">
       <div>📂 松开以上传文件</div>
       <div style="font-size:0.8rem;font-weight:400;margin-top:0.4rem;opacity:0.7">支持多文件同时上传</div>
+      <div id="drag-target" style="font-size:0.75rem;font-weight:500;margin-top:0.55rem;color:var(--text-primary)"></div>
     </div>
   </div>
+
+  <!-- ===== UPLOAD QUEUE ===== -->
+  <div id="upload-queue" class="upload-queue"></div>
 
   <!-- ===== SIDEBAR MOBILE OVERLAY ===== -->
   <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
@@ -1266,21 +1320,6 @@
 
         <!-- Hidden file input -->
         <input type="file" id="file-input" style="display:none" onchange="handleFileSelect(event)" multiple>
-
-        <!-- Upload Progress Toast (inline) -->
-        <div id="upload-progress-card" class="upload-progress-toast" style="display:none">
-          <div class="progress-header">
-            <span class="progress-filename" id="progress-filename">准备中...</span>
-            <span class="progress-pct" id="progress-percent">0%</span>
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" id="progress-bar-fill"></div>
-          </div>
-          <div class="progress-meta">
-            <span id="progress-status">-</span>
-            <span id="progress-speed">-</span>
-          </div>
-        </div>
 
         <!-- ===== VIEW: ALL FILES ===== -->
         <div id="view-all" class="view-panel active">
@@ -1604,6 +1643,11 @@
     let currentPath    = ''; // virtual folder path (e.g., 'docs/')
     let quickTagDropdown = null; // tracking the quick tag dropdown element
     let moveSrcKey     = null; // the key of the file being moved/renamed
+
+    // Upload queue state
+    let uploadQueue = [];             // [{ id, file, name, key, status, progress, speed, statusText, uploadId, controller }]
+    let uploadSeq   = 0;              // monotonic id generator
+    const UPLOAD_CONCURRENCY = 3;     // max simultaneous uploads
 
     // ============================================================
     // TAG STATE
@@ -2817,6 +2861,8 @@
     // ============================================================
     document.addEventListener('dragenter', e => {
       e.preventDefault(); dragCount++;
+      const t = document.getElementById('drag-target');
+      if (t) t.textContent = '上传到：/' + (currentPath || '');
       document.getElementById('drag-overlay').classList.add('on');
     });
     document.addEventListener('dragleave', () => {
@@ -2826,88 +2872,197 @@
     document.addEventListener('drop', e => {
       e.preventDefault(); dragCount=0;
       document.getElementById('drag-overlay').classList.remove('on');
-      const files = e.dataTransfer.files;
-      for (const f of files) startUpload(f);
+      for (const f of e.dataTransfer.files) enqueueUpload(f);
     });
 
     // ============================================================
-    // UPLOAD
+    // UPLOAD QUEUE — per-file progress / cancel / retry, bounded concurrency
     // ============================================================
     function handleFileSelect(e) {
       if (!e.target.files?.length) return;
-      for (const f of e.target.files) startUpload(f);
+      for (const f of e.target.files) enqueueUpload(f);
       e.target.value = '';
     }
 
-    async function startUpload(file) {
-      const card  = document.getElementById('upload-progress-card');
-      const fill  = document.getElementById('progress-bar-fill');
-      const fname = document.getElementById('progress-filename');
-      const pct   = document.getElementById('progress-percent');
-      const stat  = document.getElementById('progress-status');
-      const spd   = document.getElementById('progress-speed');
+    function enqueueUpload(file) {
+      const item = {
+        id: ++uploadSeq,
+        file,
+        name: file.name,
+        key: currentPath + file.name,
+        status: 'queued',      // queued | uploading | success | error | canceled
+        progress: 0,
+        speed: '',
+        statusText: '排队中…',
+        uploadId: null,
+        controller: null
+      };
+      uploadQueue.push(item);
+      renderUploadQueue();
+      processUploadQueue();
+    }
 
-      card.style.display = 'block';
-      fname.textContent = file.name;
-      pct.textContent   = '0%';
-      stat.textContent  = '初始化...';
-      fill.style.width  = '0%';
+    function processUploadQueue() {
+      const active = uploadQueue.filter(it => it.status === 'uploading').length;
+      let slots = UPLOAD_CONCURRENCY - active;
+      for (const it of uploadQueue) {
+        if (slots <= 0) break;
+        if (it.status === 'queued') { slots--; runUpload(it); }
+      }
+    }
 
-      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-      let uploadId, uploadKey;
+    async function runUpload(item) {
+      item.status = 'uploading';
+      item.statusText = '初始化…';
+      item.progress = 0;
+      item.controller = new AbortController();
+      const signal = item.controller.signal;
+      renderUploadItem(item);
+
+      const file = item.file;
+      const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
 
       try {
         const initR = await fetch('/api/upload-init', {
           method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
-          body: JSON.stringify({ filename: currentPath + file.name, contentType: file.type||'application/octet-stream' })
+          body: JSON.stringify({ filename: item.key, contentType: file.type||'application/octet-stream' }),
+          signal
         });
         if (!initR.ok) throw new Error('初始化上传失败');
         const initD = await initR.json();
-        uploadId  = initD.uploadId;
-        uploadKey = initD.key;
+        item.uploadId = initD.uploadId;
+        const uploadKey = initD.key;
 
         const parts = [];
-        const t0    = Date.now();
-        let   done  = 0;
+        const t0 = Date.now();
+        let doneBytes = 0;
 
         for (let i = 0; i < totalChunks; i++) {
           const start = i * CHUNK_SIZE;
           const end   = Math.min(start + CHUNK_SIZE, file.size);
           const chunk = file.slice(start, end);
-          stat.textContent = `分片 ${i+1}/${totalChunks}`;
+          item.statusText = `分片 ${i+1}/${totalChunks}`;
+          renderUploadItem(item);
 
-          const partR = await fetch(`/api/upload-part?key=${ek(uploadKey)}&uploadId=${uploadId}&partNumber=${i+1}`, {
-            method:'POST', headers:getHeaders(), body:chunk
+          const partR = await fetch(`/api/upload-part?key=${ek(uploadKey)}&uploadId=${item.uploadId}&partNumber=${i+1}`, {
+            method:'POST', headers:getHeaders(), body:chunk, signal
           });
           if (!partR.ok) throw new Error(`分片 ${i+1} 上传失败`);
           const partD = await partR.json();
           parts.push({ partNumber:i+1, etag:partD.etag });
 
-          done += (end - start);
-          const p   = Math.round((done / file.size) * 100);
-          const spd_ = done / ((Date.now()-t0)/1000);
-          fill.style.width   = p + '%';
-          pct.textContent    = p + '%';
-          spd.textContent    = formatBytes(spd_) + '/s';
+          doneBytes += (end - start);
+          item.progress = Math.round((doneBytes / (file.size||1)) * 100);
+          item.speed = formatBytes(doneBytes / ((Date.now()-t0)/1000 || 1)) + '/s';
+          renderUploadItem(item);
         }
 
-        const cmpR = await fetch(`/api/upload-complete?key=${ek(uploadKey)}&uploadId=${uploadId}`, {
+        const cmpR = await fetch(`/api/upload-complete?key=${ek(uploadKey)}&uploadId=${item.uploadId}`, {
           method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
-          body: JSON.stringify({ parts })
+          body: JSON.stringify({ parts }), signal
         });
         if (!cmpR.ok) throw new Error('合并分片失败');
 
-        stat.textContent = '✓ 上传成功！';
-        fill.style.width = '100%'; pct.textContent = '100%';
-        showToast(`「${file.name}」上传成功`, 'success');
-        setTimeout(() => { card.style.display='none'; }, 2200);
+        item.status = 'success';
+        item.progress = 100;
+        item.statusText = '✓ 上传成功';
+        item.speed = '';
+        renderUploadItem(item);
+        showToast(`「${item.name}」上传成功`, 'success');
         await loadFiles();
+        setTimeout(() => { if (item.status === 'success') dismissUpload(item.id); }, 2500);
 
       } catch(e) {
-        stat.textContent = '✕ ' + e.message;
-        showToast('上传失败: '+e.message, 'error');
-        setTimeout(()=>{ card.style.display='none'; }, 3000);
+        if (signal.aborted || item.status === 'canceled') {
+          item.status = 'canceled';
+          item.statusText = '已取消';
+        } else {
+          item.status = 'error';
+          item.statusText = '✕ ' + e.message;
+          showToast(`「${item.name}」上传失败`, 'error');
+        }
+        renderUploadItem(item);
+      } finally {
+        item.controller = null;
+        processUploadQueue();
       }
+    }
+
+    function cancelUpload(id) {
+      const item = uploadQueue.find(it => it.id === id);
+      if (!item) return;
+      if (item.status === 'uploading') {
+        item.status = 'canceled';
+        if (item.controller) item.controller.abort();
+      } else if (item.status === 'queued') {
+        item.status = 'canceled';
+        item.statusText = '已取消';
+        renderUploadItem(item);
+      }
+    }
+
+    function retryUpload(id) {
+      const item = uploadQueue.find(it => it.id === id);
+      if (!item || item.status === 'uploading') return;
+      item.status = 'queued';
+      item.progress = 0;
+      item.statusText = '排队中…';
+      renderUploadItem(item);
+      processUploadQueue();
+    }
+
+    function dismissUpload(id) {
+      const idx = uploadQueue.findIndex(it => it.id === id);
+      if (idx === -1) return;
+      uploadQueue.splice(idx, 1);
+      renderUploadQueue();
+    }
+
+    function clearFinishedUploads() {
+      uploadQueue = uploadQueue.filter(it => it.status === 'uploading' || it.status === 'queued');
+      renderUploadQueue();
+    }
+
+    function uploadItemHtml(item) {
+      const cls = item.status === 'error' ? ' error' : (item.status === 'success' ? ' success' : '');
+      let btns;
+      if (item.status === 'uploading' || item.status === 'queued') {
+        btns = `<button class="upload-mini-btn danger" onclick="cancelUpload(${item.id})">取消</button>`;
+      } else if (item.status === 'error' || item.status === 'canceled') {
+        btns = `<button class="upload-mini-btn gold" onclick="retryUpload(${item.id})">重试</button>
+                <button class="upload-mini-btn" onclick="dismissUpload(${item.id})">关闭</button>`;
+      } else {
+        btns = `<button class="upload-mini-btn" onclick="dismissUpload(${item.id})">关闭</button>`;
+      }
+      return `<div class="upload-item${cls}" id="upload-item-${item.id}">
+        <div class="upload-item-head">
+          <span class="upload-item-name" title="${item.key}">${item.name}</span>
+          <span class="upload-item-pct">${item.progress}%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${item.progress}%"></div></div>
+        <div class="upload-item-meta">
+          <span class="upload-item-status">${item.statusText}${item.speed ? ' · ' + item.speed : ''}</span>
+          <span class="upload-item-btns">${btns}</span>
+        </div>
+      </div>`;
+    }
+
+    function renderUploadItem(item) {
+      const el = document.getElementById('upload-item-' + item.id);
+      if (!el) { renderUploadQueue(); return; }
+      el.outerHTML = uploadItemHtml(item);
+    }
+
+    function renderUploadQueue() {
+      const c = document.getElementById('upload-queue');
+      if (!c) return;
+      if (!uploadQueue.length) { c.innerHTML = ''; return; }
+      const activeN = uploadQueue.filter(it => it.status==='uploading'||it.status==='queued').length;
+      const head = `<div class="upload-queue-head">
+        <span>上传队列 · ${activeN ? activeN + ' 进行中' : '已完成'} · /${currentPath || ''}</span>
+        <button class="upload-mini-btn" onclick="clearFinishedUploads()">清除已完成</button>
+      </div>`;
+      c.innerHTML = head + uploadQueue.map(uploadItemHtml).join('');
     }
 
     // ============================================================
