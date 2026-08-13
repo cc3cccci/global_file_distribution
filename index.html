@@ -478,6 +478,56 @@
     }
 
     /* =============================================
+       UPLOAD QUEUE (per-file cards, bottom-right)
+       ============================================= */
+    .upload-queue {
+      position: fixed; right: 1.2rem; bottom: 1.2rem;
+      width: 340px; max-width: calc(100vw - 2rem);
+      max-height: 62vh; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 0.55rem;
+      z-index: 60;
+    }
+    .upload-queue:empty { display: none; }
+    .upload-queue-head {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.72rem; color: var(--text-secondary);
+      background: var(--modal-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border); border-radius: 8px;
+      padding: 0.4rem 0.7rem;
+    }
+    .upload-item {
+      background: var(--modal-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border); border-radius: 10px;
+      padding: 0.6rem 0.8rem;
+      box-shadow: 0 6px 24px var(--modal-shadow);
+    }
+    .upload-item.error { border-color: rgba(244,63,94,0.4); }
+    .upload-item.success { border-color: rgba(16,185,129,0.35); }
+    .upload-item-head {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 0.5rem; font-size: 0.76rem; margin-bottom: 0.4rem;
+    }
+    .upload-item-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .upload-item-pct { flex-shrink: 0; font-weight: 600; color: var(--accent-gold); }
+    .upload-item.error .upload-item-pct { color: var(--accent-rose); }
+    .upload-item.success .upload-item-pct { color: var(--accent-emerald); }
+    .upload-item-meta {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 0.4rem; font-size: 0.67rem; color: var(--text-secondary); gap: 0.5rem;
+    }
+    .upload-item-status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .upload-item-btns { display: flex; gap: 0.3rem; flex-shrink: 0; }
+    .upload-mini-btn {
+      background: transparent; border: 1px solid var(--btn-border);
+      color: var(--text-secondary); border-radius: 5px;
+      padding: 0.12rem 0.5rem; font-size: 0.66rem; cursor: pointer;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .upload-mini-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+    .upload-mini-btn.danger:hover { color: var(--accent-rose); border-color: var(--accent-rose); }
+    .upload-mini-btn.gold { color: var(--accent-gold); border-color: rgba(212,175,55,0.4); }
+
+    /* =============================================
        VIEW PANELS
        ============================================= */
     .view-panel { display: none; }
@@ -510,6 +560,11 @@
       vertical-align: middle; font-size: 0.82rem;
     }
     .file-table tr:last-child td { border-bottom: none; }
+    /* Fixed row height keeps virtual-scroll math exact (main + tag lists only) */
+    #file-list-body td, #tag-file-list-body td { height: 44px; padding-top: 0; padding-bottom: 0; }
+    .file-table th.sortable { cursor: pointer; }
+    .file-table th.sortable:hover { color: var(--text-primary); }
+    .sort-arrow { font-size: 0.7rem; color: var(--accent-gold); margin-left: 3px; }
     .file-row { cursor: pointer; transition: background 0.12s; }
     .file-row:hover td { background: var(--row-hover); }
     .file-row.selected td { background: var(--row-selected); }
@@ -873,6 +928,33 @@
     }
     .sidebar-overlay.on { display: block; }
 
+    /* Backdrop for the mobile bottom-sheet detail panel (only shown on mobile) */
+    .context-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 44; display: none;
+    }
+
+    /* Right-click context menu */
+    .ctx-menu {
+      position: fixed; z-index: 90; min-width: 172px;
+      background: var(--modal-bg); backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border); border-radius: 10px;
+      padding: 0.35rem; box-shadow: 0 10px 34px var(--modal-shadow);
+      display: none; flex-direction: column; gap: 2px;
+    }
+    .ctx-menu.on { display: flex; }
+    .ctx-item {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.45rem 0.6rem; border-radius: 6px;
+      font-size: 0.78rem; color: var(--text-primary); cursor: pointer;
+      white-space: nowrap; background: transparent; border: none;
+      text-align: left; width: 100%;
+    }
+    .ctx-item:hover { background: var(--sidebar-hover-bg); }
+    .ctx-item.danger { color: var(--accent-rose); }
+    .ctx-sep { height: 1px; background: var(--panel-border); margin: 0.25rem 0; }
+
     /* =============================================
        TAG STYLES (iOS-style multi-color)
        ============================================= */
@@ -1178,22 +1260,6 @@
     .snippet-label { font-size: 0.7rem; color: var(--text-secondary); margin: 0.55rem 0 0.25rem; }
 
     /* =============================================
-       UPLOAD QUEUE
-       ============================================= */
-    .upload-queue {
-      position: fixed; right: 1rem; bottom: 1rem; z-index: 70;
-      width: min(340px, calc(100vw - 2rem));
-      background: var(--toast-bg); border: 1px solid var(--panel-border);
-      border-radius: 12px; padding: 0.7rem 0.8rem;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none;
-    }
-    .upload-queue.open { display: block; }
-    .uq-item { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; font-size: 0.75rem; }
-    .uq-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .uq-bar { height: 3px; background: var(--panel-border); border-radius: 2px; margin-top: 0.35rem; overflow: hidden; }
-    .uq-bar > div { height: 100%; background: var(--accent-gold); width: 0%; transition: width 0.15s; }
-
-    /* =============================================
        CERT CARDS / README
        ============================================= */
     .cert-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }
@@ -1231,6 +1297,15 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .spin { animation: spin 1s linear infinite; }
 
+    /* Skeleton loading placeholders */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(212,175,55,0.05) 25%, rgba(212,175,55,0.14) 37%, rgba(212,175,55,0.05) 63%);
+      background-size: 400% 100%;
+      animation: skeleton-shimmer 1.3s ease infinite;
+      border-radius: 6px; display: inline-block;
+    }
+    @keyframes skeleton-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
     /* =============================================
        MOBILE RESPONSIVE
        ============================================= */
@@ -1250,12 +1325,27 @@
 
       .topbar-search-wrap { max-width: 180px; }
 
-      .context-panel.open {
-        position: fixed; right: 0; top: 0;
-        height: 100vh;
-        z-index: 40;
-        box-shadow: -4px 0 24px rgba(0,0,0,0.5);
+      /* Detail panel becomes a bottom sheet on mobile so the list stays visible */
+      .context-panel {
+        position: fixed; left: 0; right: 0; bottom: 0; top: auto;
+        width: 100% !important; min-width: 0 !important;
+        height: auto; max-height: 80vh;
+        border-left: none; border-top: 1px solid var(--sidebar-border);
+        border-radius: 16px 16px 0 0;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+        z-index: 45;
+        box-shadow: 0 -8px 30px rgba(0,0,0,0.5);
       }
+      .context-panel.open { transform: translateY(0); }
+      .context-panel::before {
+        content: ''; position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+        width: 38px; height: 4px; border-radius: 2px;
+        background: var(--text-secondary); opacity: 0.4; z-index: 1;
+      }
+      .panel-hdr { padding-top: 1.1rem; }
+      .panel-body { max-height: calc(80vh - 52px); }
+      .context-overlay.on { display: block; }
 
       .batch-bar {
         left: 0.75rem; right: 0.75rem;
@@ -1270,6 +1360,14 @@
 
       /* Hide less important table columns on mobile */
       .col-date, .col-status { display: none; }
+
+      /* Touch: row/grid actions can't rely on hover — keep them visible and
+         enlarge tap targets to a finger-friendly size. */
+      .row-actions, .grid-actions, .grid-chk { opacity: 1 !important; }
+      .act-btn { width: 34px; height: 34px; }
+      .act-btn svg { width: 15px; height: 15px; }
+      .col-chk input[type="checkbox"],
+      .file-table input[type="checkbox"] { width: 18px; height: 18px; }
     }
 
     @media (max-width: 500px) {
@@ -1306,11 +1404,21 @@
     <div class="drag-msg">
       <div>📂 松开以上传文件</div>
       <div style="font-size:0.8rem;font-weight:400;margin-top:0.4rem;opacity:0.7">支持多文件同时上传</div>
+      <div id="drag-target" style="font-size:0.75rem;font-weight:500;margin-top:0.55rem;color:var(--text-primary)"></div>
     </div>
   </div>
 
+  <!-- ===== UPLOAD QUEUE ===== -->
+  <div id="upload-queue" class="upload-queue"></div>
+
   <!-- ===== SIDEBAR MOBILE OVERLAY ===== -->
   <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- ===== DETAIL PANEL BACKDROP (mobile bottom sheet) ===== -->
+  <div id="context-overlay" class="context-overlay" onclick="closeContextPanel()"></div>
+
+  <!-- ===== RIGHT-CLICK CONTEXT MENU ===== -->
+  <div id="ctx-menu" class="ctx-menu"></div>
 
   <!-- ===== APP SHELL ===== -->
   <div class="app-shell" id="app-shell">
@@ -1406,7 +1514,7 @@
 
         <div class="topbar-search-wrap">
           <svg class="topbar-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input class="topbar-search" id="search-input" placeholder="搜索文件，或 ⌘K 命令..." oninput="renderContent()">
+          <input class="topbar-search" id="search-input" placeholder="搜索文件，或 ⌘K 命令..." oninput="onSearchInput()">
         </div>
 
         <div class="topbar-right">
@@ -1441,21 +1549,6 @@
         <!-- Hidden file inputs -->
         <input type="file" id="file-input" style="display:none" onchange="handleFileSelect(event)" multiple>
         <input type="file" id="folder-input" style="display:none" onchange="handleFolderSelect(event)" webkitdirectory directory multiple>
-
-        <!-- Upload Progress Toast (inline) -->
-        <div id="upload-progress-card" class="upload-progress-toast" style="display:none">
-          <div class="progress-header">
-            <span class="progress-filename" id="progress-filename">准备中...</span>
-            <span class="progress-pct" id="progress-percent">0%</span>
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" id="progress-bar-fill"></div>
-          </div>
-          <div class="progress-meta">
-            <span id="progress-status">-</span>
-            <span id="progress-speed">-</span>
-          </div>
-        </div>
 
         <!-- ===== VIEW: ALL FILES ===== -->
         <div id="view-all" class="view-panel active">
@@ -1514,9 +1607,9 @@
               <thead>
                 <tr>
                   <th class="col-chk"><input type="checkbox" id="tag-select-all" onchange="toggleSelectAll(this)"></th>
-                  <th>文件名</th>
-                  <th class="col-size">大小</th>
-                  <th class="col-date">修改时间</th>
+                  <th class="sortable" data-sort="name" onclick="setSort('name')">文件名<span class="sort-arrow"></span></th>
+                  <th class="col-size sortable" data-sort="size" onclick="setSort('size')">大小<span class="sort-arrow"></span></th>
+                  <th class="col-date sortable" data-sort="date" onclick="setSort('date')">修改时间<span class="sort-arrow"></span></th>
                   <th class="col-status">状态</th>
                   <th></th>
                 </tr>
@@ -1693,7 +1786,7 @@
       <div class="modal-desc" id="pub-modal-desc">永久公开直链，供软路由等设备无密码直接拉取：</div>
       <div class="pub-url-row" style="margin-bottom:0.75rem">
         <input type="text" id="pub-url-input" class="pub-url-input" readonly onclick="this.select()">
-        <button class="act-btn sh" onclick="copyPubUrl()" title="复制链接">
+        <button class="act-btn sh" onclick="copyPubUrl(event)" title="复制链接">
           <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
       </div>
@@ -1784,16 +1877,7 @@
   </div>
 
   <!-- ===== TOAST CONTAINER ===== -->
-  <div class="toast-container" id="toast-container"></div>
-
-  <!-- ===== UPLOAD QUEUE ===== -->
-  <div class="upload-queue" id="upload-queue">
-    <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;font-weight:600">
-      <span>上传队列</span>
-      <button class="panel-close" onclick="document.getElementById('upload-queue').classList.remove('open')">✕</button>
-    </div>
-    <div id="upload-queue-list"></div>
-  </div>
+  <div class="toast-container" id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
 
   <!-- ===== SHARE MODAL ===== -->
   <div class="modal-overlay" id="share-modal">
@@ -1838,6 +1922,7 @@
         <span><span class="kbd">Space</span></span><span>预览当前文件</span>
         <span><span class="kbd">←</span> <span class="kbd">→</span></span><span>预览上一张 / 下一张</span>
         <span><span class="kbd">Esc</span></span><span>关闭弹层</span>
+        <span><span class="kbd">Delete</span></span><span>删除已选文件</span>
         <span><span class="kbd">?</span></span><span>打开本说明</span>
       </div>
       <div class="modal-actions">
@@ -1900,8 +1985,10 @@
     let previewIndex   = 0;
     let cmdkItems      = [];
     let cmdkActive     = 0;
-    let uploadTasks    = [];
-    let uploadBusy     = false;
+    // Upload queue state
+    let uploadQueue = [];             // [{ id, file, name, key, status, progress, speed, statusText, uploadId, controller }]
+    let uploadSeq   = 0;              // monotonic id generator
+    const UPLOAD_CONCURRENCY = 3;     // max simultaneous uploads
 
     // ============================================================
     // TAG STATE
@@ -1999,6 +2086,8 @@
       renderTagFileList();
       closeContextPanel();
       clearSelection();
+      saveNavState();
+      pushNavHistory();
       if (window.innerWidth <= 800) closeSidebar();
     }
 
@@ -2012,16 +2101,17 @@
     function renderTagFileList() {
       if (currentNav !== 'tag' || !activeTagFilter) return;
       const q = document.getElementById('search-input').value.toLowerCase().trim();
-      const files = getFilesForTag(activeTagFilter).filter(f => f.key.toLowerCase().includes(q));
+      const files = sortItems(getFilesForTag(activeTagFilter).filter(f => f.key.toLowerCase().includes(q)));
       document.getElementById('file-count-badge').textContent = files.length + ' 个';
 
       const tbody = document.getElementById('tag-file-list-body');
       if (!tbody) return;
 
       if (!files.length) {
+        const searching = q.length > 0;
         tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
-          <div class="empty-title">此标签下暂无文件</div>
-          <div class="empty-desc">在文件列表中点击 🏷️ 为文件添加标签</div>
+          <div class="empty-title">${searching ? '未找到匹配的文件' : '此标签下暂无文件'}</div>
+          <div class="empty-desc">${searching ? '换个关键词试试，或清空搜索框' : '在文件列表中点击 🏷️ 为文件添加标签'}</div>
         </div></td></tr>`;
         return;
       }
@@ -2037,7 +2127,7 @@
       const sel = selectedFiles.has(f.key);
 
       if (isFolder) {
-        return `<tr class="file-row" onclick="handleRowClick(event,'${k}')">
+        return `<tr class="file-row" onclick="handleRowClick(event,'${k}')" oncontextmenu="showContextMenu(event,'${k}')">
           <td class="col-chk" onclick="event.stopPropagation()">
             <!-- No checkbox for folders -->
           </td>
@@ -2071,7 +2161,7 @@
         </span>`;
       }).join('');
 
-      return `<tr class="file-row ${sel?'selected':''}" onclick="handleRowClick(event,'${k}')" ondblclick="handleRowDblClick(event,'${k}')">
+      return `<tr class="file-row ${sel?'selected':''}" onclick="handleRowClick(event,'${k}')" ondblclick="handleRowDblClick(event,'${k}')" oncontextmenu="showContextMenu(event,'${k}')">
         <td class="col-chk" onclick="event.stopPropagation()">
           <input type="checkbox" ${sel?'checked':''} onchange="toggleSelectFile('${k}',this.checked)">
         </td>
@@ -2544,12 +2634,60 @@
       await Promise.all([loadFiles(), loadSyncList(), loadTagData()]);
       if (currentView !== 'list') setView(currentView);
       updateSortArrows();
+      restoreNavState();
+    }
+
+    // Persist current navigation (view + folder path + active tag) so a page
+    // refresh keeps the user where they were instead of jumping to the root.
+    function saveNavState() {
+      try {
+        sessionStorage.setItem('navState', JSON.stringify({
+          nav: currentNav, path: currentPath, tag: activeTagFilter
+        }));
+      } catch {}
+    }
+
+    function restoreNavState() {
+      let s = null;
+      try { s = JSON.parse(sessionStorage.getItem('navState') || 'null'); } catch {}
+      if (!s) return;
+      if (s.nav === 'tag' && s.tag) {
+        setTagView(encodeURIComponent(s.tag));
+      } else if (s.nav === 'shared' || s.nav === 'sync' || s.nav === 'certs') {
+        setNavView(s.nav);
+      } else if (s.path) {
+        currentPath = s.path;
+        renderContent();
+      }
     }
 
     // ============================================================
     // LOAD DATA
     // ============================================================
+    // Skeleton placeholders shown during the first data load so the list area
+    // never flashes empty (which reads as "broken").
+    function renderListLoading() {
+      const tbody = document.getElementById('file-list-body');
+      if (tbody) tbody.innerHTML = Array.from({length: 6}).map(() => `
+        <tr>
+          <td class="col-chk"></td>
+          <td><div class="fname-cell"><span class="skeleton" style="width:22px;height:22px"></span><span class="skeleton" style="width:45%;height:12px"></span></div></td>
+          <td class="col-size"><span class="skeleton" style="width:48px;height:10px"></span></td>
+          <td class="col-date"><span class="skeleton" style="width:90px;height:10px"></span></td>
+          <td class="col-status"><span class="skeleton" style="width:44px;height:14px;border-radius:20px"></span></td>
+          <td><span class="skeleton" style="width:60px;height:20px;float:right"></span></td>
+        </tr>`).join('');
+      const grid = document.getElementById('file-grid-body');
+      if (grid) grid.innerHTML = Array.from({length: 8}).map(() => `
+        <div class="grid-card" style="cursor:default">
+          <span class="skeleton" style="width:48px;height:48px;border-radius:8px;margin-bottom:0.55rem"></span>
+          <span class="skeleton" style="width:70%;height:11px"></span>
+          <span class="skeleton" style="width:40%;height:9px;margin-top:0.35rem"></span>
+        </div>`).join('');
+    }
+
     async function loadFiles() {
+      if (!allFiles.length) renderListLoading();
       try {
         const [fr, pr] = await Promise.all([
           fetch('/api/list', { headers: getHeaders() }),
@@ -2572,9 +2710,13 @@
 
     function updateStorage() {
       const total = allFiles.reduce((s,f)=>s+f.size,0);
-      document.getElementById('storage-text').textContent = formatBytes(total)+' 已使用';
-      const pct = Math.min((total/(10*1024*1024*1024))*100, 100);
-      document.getElementById('storage-fill').style.width = Math.max(pct, 2)+'%';
+      const fileCount = allFiles.filter(f => !f.key.endsWith('/')).length;
+      // R2 按量计费、无固定容量上限，因此不再显示误导性的 "X% / 10GB" 百分比，
+      // 改为展示真实已用大小与文件数量。
+      document.getElementById('storage-text').textContent = `${formatBytes(total)} · ${fileCount} 个文件`;
+      const fill = document.getElementById('storage-fill');
+      fill.style.width = total > 0 ? '100%' : '0%';
+      fill.parentElement.title = 'Cloudflare R2 按量计费，无固定容量上限';
     }
 
     // ============================================================
@@ -2619,6 +2761,9 @@
       if (name === 'shared') renderSharedView();
       if (name === 'certs') loadCertsView();
 
+      saveNavState();
+      pushNavHistory();
+
       // Close sidebar on mobile
       if (window.innerWidth <= 800) closeSidebar();
     }
@@ -2646,6 +2791,13 @@
     // ============================================================
     // RENDER ALL FILES VIEW
     // ============================================================
+    // Debounce keystrokes so large lists are not re-rendered on every keypress.
+    let searchDebounceTimer = null;
+    function onSearchInput() {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => renderContent(), 250);
+    }
+
     function renderContent() {
       if (currentNav === 'tag') {
         renderTagFileList();
@@ -2719,47 +2871,141 @@
       renderContent();
     }
 
+    // Virtual scrolling: lists longer than the threshold render only the rows
+    // in (and near) the viewport, using spacer rows to preserve scroll height.
+    const VIRTUAL_THRESHOLD = 200;
+    const VROW_H = 44;      // must match the fixed row height in CSS
+    const VOVERSCAN = 8;
+    let vlist = { files: [], active: false };
+    let vlistScrollScheduled = false;
+
     function renderListView(files) {
       const tbody = document.getElementById('file-list-body');
       if (!tbody) return;
 
       if (!files.length) {
+        vlist.active = false;
+        const searching = document.getElementById('search-input').value.trim().length > 0;
         tbody.innerHTML = `<tr><td colspan="6">
           <div class="empty-state">
             <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
               <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
               <polyline points="13 2 13 9 20 9"/>
             </svg>
-            <div class="empty-title">暂无内容</div>
-            <div class="empty-desc">拖拽文件到此处，或按 U 上传 · ⌘K 打开命令面板</div>
+            <div class="empty-title">${searching ? '未找到匹配的文件' : '暂无内容'}</div>
+            <div class="empty-desc">${searching ? '换个关键词试试，或清空搜索框' : '拖拽文件到此处，或按 U 上传 · ⌘K 打开命令面板'}</div>
           </div>
         </td></tr>`;
         return;
       }
 
-      tbody.innerHTML = files.map(f => buildFileRow(f)).join('');
+      if (files.length <= VIRTUAL_THRESHOLD) {
+        vlist.active = false;
+        tbody.innerHTML = files.map(f => buildFileRow(f)).join('');
+        return;
+      }
+
+      vlist.files = files;
+      vlist.active = true;
+      const container = document.getElementById('content-area');
+      if (container) container.scrollTop = 0; // reset to top on a fresh list render
+      renderVirtualWindow();
     }
+
+    function renderVirtualWindow() {
+      if (!vlist.active) return;
+      const tbody = document.getElementById('file-list-body');
+      const container = document.getElementById('content-area');
+      if (!tbody || !container) return;
+      const files = vlist.files;
+      const n = files.length;
+
+      const cRect = container.getBoundingClientRect();
+      const bRect = tbody.getBoundingClientRect();
+      const bodyContentTop = (bRect.top - cRect.top) + container.scrollTop;
+      const scrollTop = container.scrollTop;
+
+      let start = Math.floor((scrollTop - bodyContentTop) / VROW_H) - VOVERSCAN;
+      start = Math.max(0, Math.min(start, Math.max(0, n - 1)));
+      const visible = Math.ceil(container.clientHeight / VROW_H) + VOVERSCAN * 2;
+      const end = Math.min(n, start + visible);
+
+      const topH = start * VROW_H;
+      const botH = (n - end) * VROW_H;
+      let html = '';
+      if (topH > 0) html += `<tr class="vspacer"><td colspan="6" style="height:${topH}px;padding:0;border:none"></td></tr>`;
+      for (let i = start; i < end; i++) html += buildFileRow(files[i]);
+      if (botH > 0) html += `<tr class="vspacer"><td colspan="6" style="height:${botH}px;padding:0;border:none"></td></tr>`;
+      tbody.innerHTML = html;
+    }
+
+    (function attachVirtualScroll() {
+      const container = document.getElementById('content-area');
+      if (!container) return;
+      container.addEventListener('scroll', () => {
+        if (!vlist.active || vlistScrollScheduled) return;
+        vlistScrollScheduled = true;
+        requestAnimationFrame(() => { vlistScrollScheduled = false; renderVirtualWindow(); });
+      });
+    })();
+
+    let gridState = { files: [], rendered: 0, observer: null };
+    const GRID_CHUNK = 120;
 
     function renderGridView(files) {
       const container = document.getElementById('file-grid-body');
       if (!container) return;
+      if (gridState.observer) { gridState.observer.disconnect(); gridState.observer = null; }
 
       if (!files.length) {
+        const searching = document.getElementById('search-input').value.trim().length > 0;
         container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-          <div class="empty-title">暂无内容</div>
-          <div class="empty-desc">上传文件或新建文件夹</div>
+          <div class="empty-title">${searching ? '未找到匹配的文件' : '暂无内容'}</div>
+          <div class="empty-desc">${searching ? '换个关键词试试，或清空搜索框' : '上传文件或新建文件夹'}</div>
         </div>`;
         return;
       }
 
-      container.innerHTML = files.map(f => {
+      gridState.files = files;
+      gridState.rendered = 0;
+      container.innerHTML = '';
+      appendGridChunk();
+    }
+
+    // Render grid cards in chunks; an IntersectionObserver sentinel appends more
+    // as the user scrolls, avoiding rendering thousands of cards at once.
+    function appendGridChunk() {
+      const container = document.getElementById('file-grid-body');
+      if (!container) return;
+      const files = gridState.files;
+      const start = gridState.rendered;
+      const end = Math.min(files.length, start + GRID_CHUNK);
+      const oldS = document.getElementById('grid-sentinel');
+      if (oldS) oldS.remove();
+      let html = '';
+      for (let i = start; i < end; i++) html += buildGridCard(files[i]);
+      container.insertAdjacentHTML('beforeend', html);
+      gridState.rendered = end;
+      if (gridState.observer) gridState.observer.disconnect();
+      if (end < files.length) {
+        container.insertAdjacentHTML('beforeend', '<div id="grid-sentinel" style="grid-column:1/-1;height:1px"></div>');
+        if (!gridState.observer) {
+          gridState.observer = new IntersectionObserver(entries => {
+            if (entries.some(e => e.isIntersecting)) appendGridChunk();
+          }, { root: document.getElementById('content-area'), rootMargin: '600px' });
+        }
+        gridState.observer.observe(document.getElementById('grid-sentinel'));
+      }
+    }
+
+    function buildGridCard(f) {
         const isFolder = f.isFolder || f.key.endsWith('/');
         const name = f.name || f.key;
         const k = ek(f.key);
         const sel = selectedFiles.has(f.key);
 
         if (isFolder) {
-          return `<div class="grid-card" onclick="handleGridClick(event,'${k}')">
+          return `<div class="grid-card" onclick="handleGridClick(event,'${k}')" oncontextmenu="showContextMenu(event,'${k}')">
             <div class="grid-icon" style="margin-top: 0.5rem;">${getFileIcon(f.key, 48)}</div>
             <div class="grid-name" style="font-weight:600;margin-top:0.4rem;" title="${name}">${name}</div>
             <div class="grid-size">-</div>
@@ -2783,7 +3029,7 @@
           ? `<img class="grid-thumb" src="${authFileUrl(f.key, true)}" alt="" loading="lazy">`
           : `<div class="grid-icon">${getFileIcon(f.key, 48)}</div>`;
 
-        return `<div class="grid-card ${sel?'selected':''}" onclick="handleGridClick(event,'${k}')" ondblclick="openPreview('${k}')">
+        return `<div class="grid-card ${sel?'selected':''}" onclick="handleGridClick(event,'${k}')" ondblclick="openPreview('${k}')" oncontextmenu="showContextMenu(event,'${k}')">
           <input type="checkbox" class="grid-chk" ${sel?'checked':''} onclick="event.stopPropagation()" onchange="toggleSelectFile('${k}',this.checked)">
           ${thumb}
           <div class="grid-name" title="${name}">${name}</div>
@@ -2808,7 +3054,6 @@
             </button>
           </div>
         </div>`;
-      }).join('');
     }
 
     // ============================================================
@@ -2986,10 +3231,12 @@
         </div>`;
 
       panel.classList.add('open');
+      document.getElementById('context-overlay').classList.add('on');
     }
 
     function closeContextPanel() {
       document.getElementById('context-panel').classList.remove('open');
+      document.getElementById('context-overlay').classList.remove('on');
       contextFile = null;
     }
 
@@ -3003,23 +3250,40 @@
       updateSelectAllState();
     }
 
-    function toggleSelectAll(cb) {
+    // Keys currently visible & selectable in the active view. Respects the
+    // current nav view, virtual folder path and search query, and never
+    // includes folders. This scopes "select all" to what the user actually
+    // sees, avoiding accidentally selecting the entire bucket.
+    function getSelectableKeys() {
       const q = document.getElementById('search-input').value.toLowerCase().trim();
-      const filtered = allFiles.filter(f => f.key.toLowerCase().includes(q));
-      cb.checked ? filtered.forEach(f => selectedFiles.add(f.key)) : filtered.forEach(f => selectedFiles.delete(f.key));
+      let items;
+      if (currentNav === 'tag' && activeTagFilter) {
+        items = getFilesForTag(activeTagFilter).filter(f => f.key.toLowerCase().includes(q));
+      } else if (q) {
+        items = allFiles.filter(f => f.key.toLowerCase().includes(q) && !f.key.endsWith('/'));
+      } else {
+        items = getItemsInCurrentPath(allFiles).filter(it => !it.isFolder);
+      }
+      return items.map(f => f.key);
+    }
+
+    function toggleSelectAll(cb) {
+      const keys = getSelectableKeys();
+      cb.checked ? keys.forEach(k => selectedFiles.add(k)) : keys.forEach(k => selectedFiles.delete(k));
       renderContent();
       updateBatchBar();
     }
 
     function updateSelectAllState() {
-      const cb = document.getElementById('select-all-chk');
-      if (!cb) return;
-      const q = document.getElementById('search-input').value.toLowerCase().trim();
-      const filtered = allFiles.filter(f => f.key.toLowerCase().includes(q));
-      const allSel = filtered.length && filtered.every(f => selectedFiles.has(f.key));
+      const keys = getSelectableKeys();
+      const allSel = keys.length && keys.every(k => selectedFiles.has(k));
       const someSel = selectedFiles.size > 0;
-      cb.checked = allSel;
-      cb.indeterminate = !allSel && someSel;
+      ['select-all-chk','tag-select-all'].forEach(id => {
+        const cb = document.getElementById(id);
+        if (!cb) return;
+        cb.checked = allSel;
+        cb.indeterminate = !allSel && someSel;
+      });
     }
 
     function clearSelection() {
@@ -3040,11 +3304,17 @@
     // ============================================================
     async function batchDownload() {
       if (!selectedFiles.size) return;
-      showToast(`开始下载 ${selectedFiles.size} 个文件...`, 'info');
-      for (const k of selectedFiles) {
-        await new Promise(r => setTimeout(r, 250));
+      const keys = [...selectedFiles];
+      const total = keys.length;
+      showToast(`开始下载 ${total} 个文件（浏览器可能会请求允许多文件下载）`, 'info');
+      let done = 0;
+      for (const k of keys) {
         downloadFile(ek(k));
+        done++;
+        // spacing avoids the browser silently dropping rapid successive downloads
+        if (done < total) await new Promise(r => setTimeout(r, 600));
       }
+      showToast(`已触发 ${total} 个文件的下载`, 'success');
     }
 
     async function batchShare() {
@@ -3069,17 +3339,31 @@
       const keys = [...selectedFiles];
       const allPub = keys.every(k => publicFiles.includes(k));
       const nextState = !allPub;
-      for (const k of keys) {
-        try {
-          const r = await fetch('/api/public-toggle', {
-            method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
-            body: JSON.stringify({ key:k, isPublic:nextState })
-          });
-          if (r.ok) { const d = await r.json(); publicFiles = d.publicFiles||[]; }
-        } catch {}
+      const run = async () => {
+        for (const k of keys) {
+          try {
+            const r = await fetch('/api/public-toggle', {
+              method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
+              body: JSON.stringify({ key:k, isPublic:nextState })
+            });
+            if (r.ok) { const d = await r.json(); publicFiles = d.publicFiles||[]; }
+          } catch {}
+        }
+        showToast(nextState ? `已将 ${keys.length} 个文件设为公开` : `已取消 ${keys.length} 个文件公开状态`, 'success');
+        renderContent(); renderSharedView(); clearSelection();
+      };
+      // Making files public exposes them via anonymous permanent links — confirm first.
+      if (nextState) {
+        openConfirm({
+          title: `将 ${keys.length} 个文件设为公开？`,
+          desc: '这些文件将可通过永久公开直链被任何知道链接的人匿名下载，请确认无隐私风险。',
+          okText: '设为公开',
+          danger: false,
+          onOk: run
+        });
+      } else {
+        await run();
       }
-      showToast(nextState ? `已将 ${keys.length} 个文件设为公开` : `已取消 ${keys.length} 个文件公开状态`, 'success');
-      renderContent(); renderSharedView(); clearSelection();
     }
 
     async function batchDelete() {
@@ -3087,21 +3371,22 @@
       const keys = [...selectedFiles];
       const count = keys.length;
       fileToDelete = keys;
-      document.getElementById('confirm-title').textContent = `确认删除这 ${count} 个文件？`;
-      document.getElementById('confirm-desc').textContent = '选中的文件将从 Cloudflare R2 中永久删除，此操作无法恢复。';
-      document.getElementById('confirm-modal').classList.add('active');
-      document.getElementById('confirm-ok-btn').onclick = async () => {
-        closeConfirmModal();
-        let done = 0;
-        for (const k of keys) {
-          try {
-            const r = await fetch(`/api/delete?key=${ek(k)}`, { method:'DELETE', headers:getHeaders() });
-            if (r.ok) done++;
-          } catch {}
+      openConfirm({
+        title: `确认删除这 ${count} 个文件？`,
+        desc: '选中的文件将从 Cloudflare R2 中永久删除，此操作无法恢复。',
+        okText: '确认删除',
+        onOk: async () => {
+          let done = 0;
+          for (const k of keys) {
+            try {
+              const r = await fetch(`/api/delete?key=${ek(k)}`, { method:'DELETE', headers:getHeaders() });
+              if (r.ok) done++;
+            } catch {}
+          }
+          showToast(`已删除 ${done}/${count} 个文件`, done===count?'success':'error');
+          clearSelection(); await loadFiles(); closeContextPanel();
         }
-        showToast(`已删除 ${done}/${count} 个文件`, done===count?'success':'error');
-        clearSelection(); await loadFiles(); closeContextPanel();
-      };
+      });
     }
 
     // ============================================================
@@ -3134,6 +3419,8 @@
     // ============================================================
     document.addEventListener('dragenter', e => {
       e.preventDefault(); dragCount++;
+      const t = document.getElementById('drag-target');
+      if (t) t.textContent = '上传到：/' + (currentPath || '');
       document.getElementById('drag-overlay').classList.add('on');
     });
     document.addEventListener('dragleave', () => {
@@ -3144,74 +3431,127 @@
       e.preventDefault(); dragCount=0;
       document.getElementById('drag-overlay').classList.remove('on');
       const packed = await collectDroppedFiles(e.dataTransfer);
-      enqueueUploads(packed);
+      for (const item of packed) enqueueUpload(item.file, item.rel);
     });
 
     // ============================================================
-    // UPLOAD
+    // UPLOAD QUEUE — per-file progress / cancel / retry, bounded concurrency
     // ============================================================
     function handleFileSelect(e) {
       if (!e.target.files?.length) return;
-      enqueueUploads([...e.target.files].map(f => ({ file: f, rel: f.name })));
+      for (const f of e.target.files) enqueueUpload(f, f.name);
       e.target.value = '';
     }
 
     function handleFolderSelect(e) {
       if (!e.target.files?.length) return;
-      const packed = [...e.target.files].map(f => ({
-        file: f,
-        rel: f.webkitRelativePath || f.name
-      }));
-      enqueueUploads(packed);
+      for (const f of e.target.files) enqueueUpload(f, f.webkitRelativePath || f.name);
       e.target.value = '';
     }
 
-    function enqueueUploads(items) {
-      for (const item of items) {
-        if (!item?.file) continue;
-        uploadTasks.push({
-          id: Date.now() + Math.random(),
-          file: item.file,
-          rel: item.rel || item.file.name,
-          pct: 0,
-          status: '排队中'
-        });
-      }
+    function enqueueUpload(file, relPath) {
+      const rel = relPath || file.name;
+      const item = {
+        id: ++uploadSeq,
+        file,
+        name: rel,
+        key: currentPath + rel,
+        status: 'queued',      // queued | uploading | success | error | canceled
+        progress: 0,
+        speed: '',
+        statusText: '排队中…',
+        uploadId: null,
+        controller: null
+      };
+      uploadQueue.push(item);
       renderUploadQueue();
       processUploadQueue();
     }
 
-    function renderUploadQueue() {
-      const box = document.getElementById('upload-queue');
-      const list = document.getElementById('upload-queue-list');
-      if (!box || !list) return;
-      if (!uploadTasks.length) { box.classList.remove('open'); return; }
-      box.classList.add('open');
-      list.innerHTML = uploadTasks.slice(-8).map(t => `
-        <div class="uq-item">
-          <div class="uq-name" title="${escapeHtml(t.rel)}">${escapeHtml(t.rel)}</div>
-          <span style="color:var(--text-secondary);white-space:nowrap">${t.status}${t.pct ? ' ' + t.pct + '%' : ''}</span>
-        </div>
-        <div class="uq-bar"><div style="width:${t.pct || 0}%"></div></div>
-      `).join('');
+    function processUploadQueue() {
+      const active = uploadQueue.filter(it => it.status === 'uploading').length;
+      let slots = UPLOAD_CONCURRENCY - active;
+      for (const it of uploadQueue) {
+        if (slots <= 0) break;
+        if (it.status === 'queued') { slots--; runUpload(it); }
+      }
     }
 
-    async function processUploadQueue() {
-      if (uploadBusy) return;
-      uploadBusy = true;
-      while (uploadTasks.some(t => t.status === '排队中')) {
-        const task = uploadTasks.find(t => t.status === '排队中');
-        if (!task) break;
-        await startUpload(task);
-      }
-      uploadBusy = false;
-      setTimeout(() => {
-        if (uploadTasks.every(t => t.status.startsWith('✓') || t.status.startsWith('✕'))) {
-          const box = document.getElementById('upload-queue');
-          if (box) box.classList.remove('open');
-          uploadTasks = [];
+    async function runUpload(item) {
+      item.status = 'uploading';
+      item.statusText = '初始化…';
+      item.progress = 0;
+      item.controller = new AbortController();
+      const signal = item.controller.signal;
+      renderUploadItem(item);
+
+      const file = item.file;
+      const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
+
+      try {
+        const initR = await fetch('/api/upload-init', {
+          method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
+          body: JSON.stringify({ filename: item.key, contentType: file.type||'application/octet-stream' }),
+          signal
+        });
+        if (!initR.ok) throw new Error('初始化上传失败');
+        const initD = await initR.json();
+        item.uploadId = initD.uploadId;
+        const uploadKey = initD.key;
+
+        const parts = [];
+        const t0 = Date.now();
+        let doneBytes = 0;
+
+        for (let i = 0; i < totalChunks; i++) {
+          const start = i * CHUNK_SIZE;
+          const end   = Math.min(start + CHUNK_SIZE, file.size);
+          const chunk = file.slice(start, end);
+          item.statusText = `分片 ${i+1}/${totalChunks}`;
+          renderUploadItem(item);
+
+          const partR = await fetch(`/api/upload-part?key=${ek(uploadKey)}&uploadId=${item.uploadId}&partNumber=${i+1}`, {
+            method:'POST', headers:getHeaders(), body:chunk, signal
+          });
+          if (!partR.ok) throw new Error(`分片 ${i+1} 上传失败`);
+          const partD = await partR.json();
+          parts.push({ partNumber:i+1, etag:partD.etag });
+
+          doneBytes += (end - start);
+          item.progress = Math.round((doneBytes / (file.size||1)) * 100);
+          item.speed = formatBytes(doneBytes / ((Date.now()-t0)/1000 || 1)) + '/s';
+          renderUploadItem(item);
         }
-      }, 2200);
+
+        const cmpR = await fetch(`/api/upload-complete?key=${ek(uploadKey)}&uploadId=${item.uploadId}`, {
+          method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
+          body: JSON.stringify({ parts }), signal
+        });
+        if (!cmpR.ok) throw new Error('合并分片失败');
+
+        item.status = 'success';
+        item.progress = 100;
+        item.statusText = '✓ 上传成功';
+        item.speed = '';
+        renderUploadItem(item);
+        showToast(`「${item.name}」上传成功`, 'success');
+        await loadFiles();
+        setTimeout(() => { if (item.status === 'success') dismissUpload(item.id); }, 2500);
+
+      } catch(e) {
+        if (signal.aborted || item.status === 'canceled') {
+          item.status = 'canceled';
+          item.statusText = '已取消';
+        } else {
+          item.status = 'error';
+          item.statusText = '✕ ' + e.message;
+          showToast(`「${item.name}」上传失败`, 'error');
+        }
+        renderUploadItem(item);
+      } finally {
+        item.controller = null;
+        processUploadQueue();
+      }
     }
 
     async function collectDroppedFiles(dataTransfer) {
@@ -3248,84 +3588,81 @@
       }
     }
 
-    async function startUpload(taskOrFile) {
-      const task = taskOrFile && taskOrFile.file ? taskOrFile : null;
-      const file = task ? task.file : taskOrFile;
-      const relPath = task ? task.rel : file.name;
-      const destKey = currentPath + relPath;
-
-      const card  = document.getElementById('upload-progress-card');
-      const fill  = document.getElementById('progress-bar-fill');
-      const fname = document.getElementById('progress-filename');
-      const pct   = document.getElementById('progress-percent');
-      const stat  = document.getElementById('progress-status');
-      const spd   = document.getElementById('progress-speed');
-
-      card.style.display = 'block';
-      fname.textContent = relPath;
-      pct.textContent   = '0%';
-      stat.textContent  = '初始化...';
-      fill.style.width  = '0%';
-      if (task) { task.status = '上传中'; task.pct = 0; renderUploadQueue(); }
-
-      const totalChunks = Math.ceil(file.size / CHUNK_SIZE) || 1;
-      let uploadId, uploadKey;
-
-      try {
-        const initR = await fetch('/api/upload-init', {
-          method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
-          body: JSON.stringify({ filename: destKey, contentType: file.type||'application/octet-stream' })
-        });
-        if (!initR.ok) throw new Error('初始化上传失败');
-        const initD = await initR.json();
-        uploadId  = initD.uploadId;
-        uploadKey = initD.key;
-
-        const parts = [];
-        const t0    = Date.now();
-        let   done  = 0;
-
-        for (let i = 0; i < totalChunks; i++) {
-          const start = i * CHUNK_SIZE;
-          const end   = Math.min(start + CHUNK_SIZE, file.size);
-          const chunk = file.slice(start, end);
-          stat.textContent = `分片 ${i+1}/${totalChunks}`;
-
-          const partR = await fetch(`/api/upload-part?key=${ek(uploadKey)}&uploadId=${uploadId}&partNumber=${i+1}`, {
-            method:'POST', headers:getHeaders(), body:chunk
-          });
-          if (!partR.ok) throw new Error(`分片 ${i+1} 上传失败`);
-          const partD = await partR.json();
-          parts.push({ partNumber:i+1, etag:partD.etag });
-
-          done += (end - start);
-          const p   = file.size ? Math.round((done / file.size) * 100) : 100;
-          const spd_ = done / Math.max((Date.now()-t0)/1000, 0.001);
-          fill.style.width   = p + '%';
-          pct.textContent    = p + '%';
-          spd.textContent    = formatBytes(spd_) + '/s';
-          if (task) { task.pct = p; task.status = '上传中'; renderUploadQueue(); }
-        }
-
-        const cmpR = await fetch(`/api/upload-complete?key=${ek(uploadKey)}&uploadId=${uploadId}`, {
-          method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
-          body: JSON.stringify({ parts })
-        });
-        if (!cmpR.ok) throw new Error('合并分片失败');
-
-        stat.textContent = '✓ 上传成功！';
-        fill.style.width = '100%'; pct.textContent = '100%';
-        if (task) { task.pct = 100; task.status = '✓ 完成'; renderUploadQueue(); }
-        showToast(`「${relPath}」上传成功`, 'success');
-        setTimeout(() => { card.style.display='none'; }, 2200);
-        await loadFiles();
-
-      } catch(e) {
-        stat.textContent = '✕ ' + e.message;
-        if (task) { task.status = '✕ 失败'; renderUploadQueue(); }
-        showToast('上传失败: '+e.message, 'error');
-        setTimeout(()=>{ card.style.display='none'; }, 3000);
+    function cancelUpload(id) {
+      const item = uploadQueue.find(it => it.id === id);
+      if (!item) return;
+      if (item.status === 'uploading') {
+        item.status = 'canceled';
+        if (item.controller) item.controller.abort();
+      } else if (item.status === 'queued') {
+        item.status = 'canceled';
+        item.statusText = '已取消';
+        renderUploadItem(item);
       }
+    }
+
+    function retryUpload(id) {
+      const item = uploadQueue.find(it => it.id === id);
+      if (!item || item.status === 'uploading') return;
+      item.status = 'queued';
+      item.progress = 0;
+      item.statusText = '排队中…';
+      renderUploadItem(item);
+      processUploadQueue();
+    }
+
+    function dismissUpload(id) {
+      const idx = uploadQueue.findIndex(it => it.id === id);
+      if (idx === -1) return;
+      uploadQueue.splice(idx, 1);
+      renderUploadQueue();
+    }
+
+    function clearFinishedUploads() {
+      uploadQueue = uploadQueue.filter(it => it.status === 'uploading' || it.status === 'queued');
+      renderUploadQueue();
+    }
+
+    function uploadItemHtml(item) {
+      const cls = item.status === 'error' ? ' error' : (item.status === 'success' ? ' success' : '');
+      let btns;
+      if (item.status === 'uploading' || item.status === 'queued') {
+        btns = `<button class="upload-mini-btn danger" onclick="cancelUpload(${item.id})">取消</button>`;
+      } else if (item.status === 'error' || item.status === 'canceled') {
+        btns = `<button class="upload-mini-btn gold" onclick="retryUpload(${item.id})">重试</button>
+                <button class="upload-mini-btn" onclick="dismissUpload(${item.id})">关闭</button>`;
+      } else {
+        btns = `<button class="upload-mini-btn" onclick="dismissUpload(${item.id})">关闭</button>`;
+      }
+      return `<div class="upload-item${cls}" id="upload-item-${item.id}">
+        <div class="upload-item-head">
+          <span class="upload-item-name" title="${item.key}">${item.name}</span>
+          <span class="upload-item-pct">${item.progress}%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${item.progress}%"></div></div>
+        <div class="upload-item-meta">
+          <span class="upload-item-status">${item.statusText}${item.speed ? ' · ' + item.speed : ''}</span>
+          <span class="upload-item-btns">${btns}</span>
+        </div>
+      </div>`;
+    }
+
+    function renderUploadItem(item) {
+      const el = document.getElementById('upload-item-' + item.id);
+      if (!el) { renderUploadQueue(); return; }
+      el.outerHTML = uploadItemHtml(item);
+    }
+
+    function renderUploadQueue() {
+      const c = document.getElementById('upload-queue');
+      if (!c) return;
+      if (!uploadQueue.length) { c.innerHTML = ''; return; }
+      const activeN = uploadQueue.filter(it => it.status==='uploading'||it.status==='queued').length;
+      const head = `<div class="upload-queue-head">
+        <span>上传队列 · ${activeN ? activeN + ' 进行中' : '已完成'} · /${currentPath || ''}</span>
+        <button class="upload-mini-btn" onclick="clearFinishedUploads()">清除已完成</button>
+      </div>`;
+      c.innerHTML = head + uploadQueue.map(uploadItemHtml).join('');
     }
 
     // ============================================================
@@ -3381,6 +3718,8 @@
       currentPath = path;
       clearSelection();
       renderContent();
+      saveNavState();
+      pushNavHistory();
     }
 
     function renderBreadcrumbs() {
@@ -3608,27 +3947,41 @@
     function confirmDelete(keyParam) {
       const k = dk(keyParam);
       fileToDelete = k;
-      if (k.endsWith('/')) {
-        document.getElementById('confirm-title').textContent = `确认删除文件夹「${k}」？`;
-        document.getElementById('confirm-desc').textContent = '此操作将从 Cloudflare R2 存储桶中永久抹除该文件夹及其内部的所有文件，且无法恢复！';
-      } else {
-        document.getElementById('confirm-title').textContent = `确认删除「${k}」？`;
-        document.getElementById('confirm-desc').textContent = '此操作将从 Cloudflare R2 存储桶中永久抹除该文件，无法恢复。';
-      }
-      document.getElementById('confirm-modal').classList.add('active');
-      document.getElementById('confirm-ok-btn').onclick = async () => {
-        closeConfirmModal();
-        try {
-          const r = await fetch(`/api/delete?key=${ek(k)}`, { method:'DELETE', headers:getHeaders() });
-          if (r.ok) { showToast(k.endsWith('/') ? `文件夹「${k}」及其子文件已删除` : `「${k}」已删除`, 'success'); await loadFiles(); closeContextPanel(); clearSelection(); }
-          else showToast('删除失败','error');
-        } catch(e){ showToast('请求异常: '+e.message,'error'); }
-      };
+      const isFolder = k.endsWith('/');
+      openConfirm({
+        title: isFolder ? `确认删除文件夹「${k}」？` : `确认删除「${k}」？`,
+        desc: isFolder
+          ? '此操作将从 Cloudflare R2 存储桶中永久抹除该文件夹及其内部的所有文件，且无法恢复！'
+          : '此操作将从 Cloudflare R2 存储桶中永久抹除该文件，无法恢复。',
+        okText: '确认删除',
+        onOk: async () => {
+          try {
+            const r = await fetch(`/api/delete?key=${ek(k)}`, { method:'DELETE', headers:getHeaders() });
+            if (r.ok) { showToast(isFolder ? `文件夹「${k}」及其子文件已删除` : `「${k}」已删除`, 'success'); await loadFiles(); closeContextPanel(); clearSelection(); }
+            else showToast('删除失败','error');
+          } catch(e){ showToast('请求异常: '+e.message,'error'); }
+        }
+      });
     }
 
     function closeConfirmModal() {
       document.getElementById('confirm-modal').classList.remove('active');
       fileToDelete = null;
+    }
+
+    // Generic confirmation dialog reusing #confirm-modal. Used for any
+    // destructive / high-impact action so the confirm UX stays consistent.
+    function openConfirm({ title, desc, okText = '确认', danger = true, onOk }) {
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-desc').textContent = desc;
+      const okBtn = document.getElementById('confirm-ok-btn');
+      okBtn.textContent = okText;
+      okBtn.className = danger ? 'btn btn-danger' : 'btn';
+      document.getElementById('confirm-modal').classList.add('active');
+      okBtn.onclick = async () => {
+        closeConfirmModal();
+        if (onOk) await onOk();
+      };
     }
 
     // ============================================================
@@ -3663,10 +4016,20 @@
       pubModalKey = null;
     }
 
-    function copyPubUrl() {
+    // Briefly show a "已复制 ✓" state on a button after a successful copy.
+    function flashCopied(btn) {
+      if (!btn) return;
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✓';
+      btn.classList.add('gl');
+      setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('gl'); }, 1200);
+    }
+
+    function copyPubUrl(ev) {
       const v = document.getElementById('pub-url-input').value;
       if (v && v !== '（未开启）') {
-        navigator.clipboard.writeText(v).then(()=>showToast('链接已复制','success'));
+        const btn = ev && ev.currentTarget;
+        navigator.clipboard.writeText(v).then(()=>{ showToast('链接已复制','success'); flashCopied(btn); });
       }
     }
 
@@ -3787,13 +4150,22 @@
     }
 
     async function deleteSyncItem(i) {
-      const removed = currentSyncList.splice(i, 1);
-      const r = await fetch('/api/sync-config', {
-        method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
-        body: JSON.stringify(currentSyncList)
+      const item = currentSyncList[i];
+      if (!item) return;
+      openConfirm({
+        title: `删除订阅「${item.key}」？`,
+        desc: '将从自动同步列表中移除该订阅项（已同步到 R2 的文件不会被删除）。',
+        okText: '删除订阅',
+        onOk: async () => {
+          const removed = currentSyncList.splice(i, 1);
+          const r = await fetch('/api/sync-config', {
+            method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
+            body: JSON.stringify(currentSyncList)
+          });
+          if (r.ok) { renderSyncList(); showToast(`「${removed[0]?.key}」订阅已删除`,'success'); }
+          else { currentSyncList.splice(i, 0, ...removed); showToast('删除失败','error'); }
+        }
       });
-      if (r.ok) { renderSyncList(); showToast(`「${removed[0]?.key}」订阅已删除`,'success'); }
-      else { currentSyncList.splice(i, 0, ...removed); showToast('删除失败','error'); }
     }
 
     async function syncSingleItem(keyParam, i) {
@@ -4327,9 +4699,15 @@
         return;
       }
       if (e.key === 'Escape') {
+        hideContextMenu();
         if (previewOpen) { closePreview(); return; }
         if (cmdkOpen) { closeCommandPalette(); return; }
-        document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+        const openModals = document.querySelectorAll('.modal-overlay.active');
+        if (openModals.length) { openModals.forEach(m => m.classList.remove('active')); fileToDelete = null; return; }
+        const panel = document.getElementById('context-panel');
+        if (panel && panel.classList.contains('open')) { closeContextPanel(); return; }
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar && sidebar.classList.contains('mobile-open')) { closeSidebar(); return; }
         closeContextPanel();
         return;
       }
@@ -4343,6 +4721,7 @@
       else if (e.key.toLowerCase() === 'u' && !e.metaKey && !e.ctrlKey) { e.preventDefault(); triggerUpload(); }
       else if (e.key.toLowerCase() === 'n' && !e.metaKey && !e.ctrlKey) { e.preventDefault(); openNewFolderModal(); }
       else if (e.key === '?' ) { e.preventDefault(); openShortcutsModal(); }
+      else if (e.key === 'Delete' && selectedFiles.size) { e.preventDefault(); batchDelete(); }
       else if (e.key === ' ' && contextFile && !anyOverlayOpen()) {
         e.preventDefault();
         openPreview(ek(contextFile.key));
@@ -4375,6 +4754,85 @@
         el.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
       }
     }
+
+    // ============================================================
+    // RIGHT-CLICK CONTEXT MENU
+    // ============================================================
+    let ctxMenuKey = null;
+    function showContextMenu(event, keyParam) {
+      event.preventDefault();
+      const k = dk(keyParam);
+      ctxMenuKey = k;
+      const isFolder = k.endsWith('/');
+      const pub = publicFiles.includes(k);
+      const menu = document.getElementById('ctx-menu');
+      menu.innerHTML = isFolder
+        ? `<button class="ctx-item" onclick="ctxAction('open')">打开文件夹</button>
+           <div class="ctx-sep"></div>
+           <button class="ctx-item danger" onclick="ctxAction('delete')">删除文件夹</button>`
+        : `<button class="ctx-item" onclick="ctxAction('preview')">预览</button>
+           <button class="ctx-item" onclick="ctxAction('download')">下载</button>
+           <button class="ctx-item" onclick="ctxAction('share')">生成分享链接</button>
+           <button class="ctx-item" onclick="ctxAction('public')">${pub ? '管理公开链接' : '开启公开链接'}</button>
+           <button class="ctx-item" onclick="ctxAction('move')">移动 / 重命名</button>
+           <button class="ctx-item" onclick="ctxAction('tag')">标签</button>
+           <div class="ctx-sep"></div>
+           <button class="ctx-item danger" onclick="ctxAction('delete')">删除</button>`;
+      menu.classList.add('on');
+      const mw = menu.offsetWidth, mh = menu.offsetHeight;
+      let x = event.clientX, y = event.clientY;
+      if (x + mw > window.innerWidth)  x = window.innerWidth  - mw - 8;
+      if (y + mh > window.innerHeight) y = window.innerHeight - mh - 8;
+      menu.style.left = Math.max(4, x) + 'px';
+      menu.style.top  = Math.max(4, y) + 'px';
+    }
+    function hideContextMenu() {
+      const m = document.getElementById('ctx-menu');
+      if (m) m.classList.remove('on');
+    }
+    function ctxAction(action) {
+      const k = ctxMenuKey; hideContextMenu();
+      if (!k) return;
+      const ekk = ek(k);
+      switch (action) {
+        case 'open':     navigateToPath(k); break;
+        case 'preview':  openPreview(ekk); break;
+        case 'download': downloadFile(ekk); break;
+        case 'share':    shareFile(ekk); break;
+        case 'public':   openPublicModal(ekk); break;
+        case 'move':     openMoveFileModal(ekk); break;
+        case 'tag':      openTagPickerModal(ekk); break;
+        case 'delete':   confirmDelete(ekk); break;
+      }
+    }
+    document.addEventListener('click', hideContextMenu);
+    document.addEventListener('scroll', hideContextMenu, true);
+
+
+    // ============================================================
+    // BROWSER BACK BUTTON — navigate folder/view history
+    // ============================================================
+    let suppressHistory = false;
+    function pushNavHistory() {
+      if (suppressHistory) return;
+      try {
+        history.pushState({ nav: currentNav, path: currentPath, tag: activeTagFilter }, '');
+      } catch {}
+    }
+    window.addEventListener('popstate', e => {
+      const s = e.state;
+      suppressHistory = true;
+      if (s && s.nav === 'tag' && s.tag) {
+        setTagView(encodeURIComponent(s.tag));
+      } else if (s && (s.nav === 'shared' || s.nav === 'sync' || s.nav === 'certs')) {
+        setNavView(s.nav);
+      } else {
+        if (currentNav !== 'all') setNavView('all');
+        currentPath = (s && s.path) || '';
+        renderContent();
+      }
+      suppressHistory = false;
+    });
 
     // ============================================================
     // INIT
