@@ -1607,9 +1607,9 @@
               <thead>
                 <tr>
                   <th class="col-chk"><input type="checkbox" id="tag-select-all" onchange="toggleSelectAll(this)"></th>
-                  <th class="sortable" data-sort="name" onclick="setSort('name')">文件名<span class="sort-arrow"></span></th>
-                  <th class="col-size sortable" data-sort="size" onclick="setSort('size')">大小<span class="sort-arrow"></span></th>
-                  <th class="col-date sortable" data-sort="date" onclick="setSort('date')">修改时间<span class="sort-arrow"></span></th>
+                  <th class="sort-th" onclick="toggleSort('name')">文件名<span class="sort-arrow" data-sort="name"></span></th>
+                  <th class="col-size sort-th" onclick="toggleSort('size')">大小<span class="sort-arrow" data-sort="size"></span></th>
+                  <th class="col-date sort-th" onclick="toggleSort('uploaded')">修改时间<span class="sort-arrow" data-sort="uploaded"></span></th>
                   <th class="col-status">状态</th>
                   <th></th>
                 </tr>
