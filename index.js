@@ -9,7 +9,8 @@ export default {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, HEAD, POST, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, Range, X-Cert-Token',
+          'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, ETag, Content-Disposition, Content-Type',
           'Access-Control-Max-Age': '86400',
         },
       });
@@ -50,8 +51,8 @@ export default {
 
       // 以下 API 均涉及数据访问，需要进行安全认证（下载接口有单独的签名鉴权）
       
-      // 路由：流式文件下载与安全签名校验
-      if (pathname === '/api/download') {
+      // 路由：流式文件下载与安全签名校验（支持 Range / 预览 inline / HEAD）
+      if (pathname === '/api/download' && (request.method === 'GET' || request.method === 'HEAD')) {
         const keyParam = url.searchParams.get('key');
         if (!keyParam) {
           return corsResponse(new Response('Missing file key', { status: 400 }));
@@ -66,16 +67,12 @@ export default {
         let isAuthorized = false;
 
         if (signature && expires) {
-          // 方式 1: 预签名链接验证
           const isValidSig = await verifySignature(key, expires, signature, env.SECRET_KEY || 'default-salt');
           if (isValidSig) {
             isAuthorized = true;
           }
         } else if (token && token === env.AUTH_PASSWORD) {
-          // 方式 2: 控制面板直连下载验证
           isAuthorized = true;
-
-          // 防盗链保护仅在直连下载时生效（分享链已自带加密时效，不限制 Referer 以便于多场景分享）
           if (!checkReferer(request, env)) {
             return corsResponse(new Response('Forbidden: Hotlinking is not allowed', { status: 403 }));
           }
@@ -85,60 +82,30 @@ export default {
           return corsResponse(new Response('Unauthorized: Link expired or invalid credentials', { status: 403 }));
         }
 
-        // 从 R2 读取文件
-        const object = await env.BUCKET.get(key);
-        if (!object) {
-          return corsResponse(new Response('File Not Found', { status: 404 }));
-        }
-
-        // 流式读取，不占用 Worker 内存，防止 128MB 限制导致崩溃
-        const headers = new Headers();
-        headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream');
-        headers.set('Content-Length', object.size.toString());
-        // 设置 Content-Disposition 保证浏览器强制下载并正确解码中文文件名
-        headers.set('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(key)}`);
-        if (object.httpEtag) {
-          headers.set('ETag', object.httpEtag);
-        }
-        headers.set('Cache-Control', 'public, max-age=31536000');
-
-        return corsResponse(new Response(object.body, {
-          headers
+        const inline = url.searchParams.get('inline') === '1';
+        return corsResponse(await serveR2Object(env, request, key, {
+          disposition: inline ? 'inline' : 'attachment',
+          cacheControl: 'private, max-age=60'
         }));
       }
 
       // 路由：永久公开共享链接流式下载 (免鉴权，适用于软路由等外部设备)
-      if (pathname.startsWith('/f/')) {
+      if (pathname.startsWith('/f/') && (request.method === 'GET' || request.method === 'HEAD')) {
         const key = decodeURIComponent(pathname.substring(3));
         if (!key) {
           return new Response('Missing filename', { status: 400 });
         }
-        
-        // 校验该文件是否已被公开分享
+
         const publicFiles = await getPublicFiles(env);
         if (!publicFiles.includes(key)) {
           return new Response('Forbidden: This file is not public', { status: 403 });
         }
-        
-        // 从 R2 获取文件
-        const object = await env.BUCKET.get(key);
-        if (!object) {
-          return new Response('File Not Found', { status: 404 });
-        }
-        
-        const headers = new Headers();
-        headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream');
-        headers.set('Content-Length', object.size.toString());
-        headers.set('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(key)}`);
-        if (object.httpEtag) {
-          headers.set('ETag', object.httpEtag);
-        }
-        // 设置不缓存，确保每次拉取都从 R2 实时获取最新版本
-        headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-        
-        return new Response(object.body, {
-          headers
-        });
+
+        const forceDownload = url.searchParams.get('dl') === '1';
+        return corsResponse(await serveR2Object(env, request, key, {
+          disposition: forceDownload ? 'attachment' : 'auto',
+          cacheControl: 'no-cache, no-store, must-revalidate'
+        }));
       }
 
       // 路由：VPS 推送 SSL 证书（使用独立 Token，与管理员密码分离）
@@ -293,34 +260,64 @@ export default {
         }));
       }
 
-      // 路由：获取文件列表
+      // 路由：获取文件列表（自动翻页，避免超过 1000 个对象时截断）
       if (pathname === '/api/list' && request.method === 'GET') {
-        const listResult = await env.BUCKET.list();
-        const files = listResult.objects.map(obj => ({
-          key: obj.key,
-          size: obj.size,
-          uploaded: obj.uploaded.toISOString()
-        }));
+        const files = await listAllObjects(env);
         return corsResponse(new Response(JSON.stringify({ files }), {
           headers: { 'Content-Type': 'application/json' }
         }));
       }
 
-      // 路由：生成 10 分钟预签名分享链接
+      // 路由：证书看板（按域名聚合 certs/ 目录）
+      if (pathname === '/api/certs' && request.method === 'GET') {
+        const objects = await listAllObjects(env, 'certs/', ['customMetadata']);
+        const domains = {};
+        for (const obj of objects) {
+          const parts = obj.key.split('/');
+          if (parts.length < 3 || parts[0] !== 'certs') continue;
+          const domain = parts[1];
+          const filename = parts.slice(2).join('/');
+          if (!domains[domain]) {
+            domains[domain] = { domain, files: [], pushed_at: obj.uploaded, size: 0 };
+          }
+          domains[domain].files.push({
+            filename,
+            key: obj.key,
+            size: obj.size,
+            uploaded: obj.uploaded,
+            pushed_at: obj.customMetadata?.pushed_at || obj.uploaded
+          });
+          domains[domain].size += obj.size;
+          const pushed = obj.customMetadata?.pushed_at || obj.uploaded;
+          if (pushed > domains[domain].pushed_at) domains[domain].pushed_at = pushed;
+        }
+        const certs = Object.values(domains).sort((a, b) => a.domain.localeCompare(b.domain));
+        return corsResponse(new Response(JSON.stringify({ certs }), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+
+      // 路由：生成预签名分享链接（ttl 秒：10m / 1h / 6h / 1d / 7d）
       if (pathname === '/api/share' && request.method === 'GET') {
         const keyParam = url.searchParams.get('key');
         if (!keyParam) {
           return corsResponse(new Response('Missing file key', { status: 400 }));
         }
         const key = decodeURIComponent(keyParam);
-        
-        // 生成 10 分钟有效期 (Date.now() + 600,000 毫秒)
-        const expires = Date.now() + 10 * 60 * 1000;
+        const ALLOWED_TTL = [600, 3600, 21600, 86400, 604800];
+        let ttl = parseInt(url.searchParams.get('ttl') || '600', 10);
+        if (!ALLOWED_TTL.includes(ttl)) ttl = 600;
+
+        const expires = Date.now() + ttl * 1000;
         const signature = await generateSignature(key, expires, env.SECRET_KEY || 'default-salt');
-        
         const shareUrl = `${url.origin}/api/download?key=${encodeURIComponent(key)}&expires=${expires}&signature=${signature}`;
-        
-        return corsResponse(new Response(JSON.stringify({ url: shareUrl }), {
+
+        return corsResponse(new Response(JSON.stringify({
+          url: shareUrl,
+          expires,
+          ttl,
+          expiresAt: new Date(expires).toISOString()
+        }), {
           headers: { 'Content-Type': 'application/json' }
         }));
       }
@@ -408,10 +405,10 @@ export default {
         const key = decodeURIComponent(keyParam);
 
         if (key.endsWith('/')) {
-          const listResult = await env.BUCKET.list({ prefix: key });
-          const keysToDelete = listResult.objects.map(obj => obj.key);
-          if (keysToDelete.length > 0) {
-            await env.BUCKET.delete(keysToDelete);
+          const listed = await listAllObjects(env, key);
+          const keysToDelete = listed.map(obj => obj.key);
+          for (let i = 0; i < keysToDelete.length; i += 1000) {
+            await env.BUCKET.delete(keysToDelete.slice(i, i + 1000));
           }
         } else {
           await env.BUCKET.delete(key);
@@ -769,12 +766,120 @@ function corsResponse(response) {
   const headers = new Headers(response.headers);
   headers.set('Access-Control-Allow-Origin', '*');
   headers.set('Access-Control-Allow-Methods', 'GET, HEAD, POST, DELETE, OPTIONS');
-  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Range, X-Cert-Token');
+  headers.set('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges, ETag, Content-Disposition, Content-Type');
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
     headers
   });
+}
+
+function guessContentType(key) {
+  const ext = (key.split('.').pop() || '').toLowerCase();
+  const map = {
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+    webp: 'image/webp', svg: 'image/svg+xml', avif: 'image/avif', ico: 'image/x-icon', bmp: 'image/bmp',
+    mp4: 'video/mp4', webm: 'video/webm', mkv: 'video/x-matroska', mov: 'video/quicktime', m4v: 'video/mp4',
+    mp3: 'audio/mpeg', wav: 'audio/wav', flac: 'audio/flac', ogg: 'audio/ogg', m4a: 'audio/mp4', opus: 'audio/opus',
+    pdf: 'application/pdf',
+    txt: 'text/plain; charset=utf-8', md: 'text/markdown; charset=utf-8', log: 'text/plain; charset=utf-8',
+    json: 'application/json', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8',
+    html: 'text/html; charset=utf-8', xml: 'application/xml', csv: 'text/csv; charset=utf-8',
+    yaml: 'text/yaml; charset=utf-8', yml: 'text/yaml; charset=utf-8', toml: 'text/plain; charset=utf-8',
+    pem: 'application/x-pem-file', conf: 'text/plain; charset=utf-8', ini: 'text/plain; charset=utf-8',
+    sh: 'text/x-sh; charset=utf-8'
+  };
+  return map[ext] || 'application/octet-stream';
+}
+
+function isPreviewableType(key) {
+  const ct = guessContentType(key);
+  return ct.startsWith('image/') || ct.startsWith('video/') || ct.startsWith('audio/') ||
+    ct === 'application/pdf' || ct.startsWith('text/') || ct === 'application/json' || ct === 'application/xml';
+}
+
+async function listAllObjects(env, prefix = '', include) {
+  const files = [];
+  let cursor;
+  do {
+    const listed = await env.BUCKET.list({
+      prefix,
+      cursor,
+      limit: 1000,
+      ...(include ? { include } : {})
+    });
+    for (const obj of listed.objects) {
+      files.push({
+        key: obj.key,
+        size: obj.size,
+        uploaded: obj.uploaded.toISOString(),
+        customMetadata: obj.customMetadata || undefined
+      });
+    }
+    cursor = listed.truncated ? listed.cursor : undefined;
+  } while (cursor);
+  return files;
+}
+
+async function serveR2Object(env, request, key, { disposition = 'attachment', cacheControl = 'private, max-age=60' } = {}) {
+  const filename = key.split('/').pop() || key;
+  const guessedType = guessContentType(key);
+  let mode = disposition;
+  if (mode === 'auto') {
+    mode = isPreviewableType(key) ? 'inline' : 'attachment';
+  }
+
+  if (request.method === 'HEAD') {
+    const head = await env.BUCKET.head(key);
+    if (!head) return new Response('File Not Found', { status: 404 });
+    const headers = new Headers();
+    head.writeHttpMetadata(headers);
+    if (!headers.get('Content-Type') || headers.get('Content-Type') === 'application/octet-stream') {
+      headers.set('Content-Type', guessedType);
+    }
+    headers.set('Content-Length', head.size.toString());
+    headers.set('Accept-Ranges', 'bytes');
+    headers.set('Cache-Control', cacheControl);
+    headers.set('Content-Disposition', `${mode}; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    if (head.httpEtag) headers.set('ETag', head.httpEtag);
+    return new Response(null, { status: 200, headers });
+  }
+
+  const object = await env.BUCKET.get(key, {
+    range: request.headers,
+    onlyIf: request.headers
+  });
+
+  if (object === null) {
+    return new Response('File Not Found', { status: 404 });
+  }
+
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  if (!headers.get('Content-Type') || headers.get('Content-Type') === 'application/octet-stream') {
+    headers.set('Content-Type', guessedType);
+  }
+  headers.set('Accept-Ranges', 'bytes');
+  headers.set('Cache-Control', cacheControl);
+  headers.set('Content-Disposition', `${mode}; filename*=UTF-8''${encodeURIComponent(filename)}`);
+  if (object.httpEtag) headers.set('ETag', object.httpEtag);
+
+  if (!object.body) {
+    return new Response(null, { status: 304, headers });
+  }
+
+  if (request.headers.has('range') && object.range) {
+    const offset = object.range.offset || 0;
+    const length = object.range.length != null ? object.range.length : (object.size - offset);
+    const end = offset + length - 1;
+    headers.set('Content-Range', `bytes ${offset}-${end}/${object.size}`);
+    headers.set('Content-Length', String(length));
+    return new Response(object.body, { status: 206, headers });
+  }
+
+  headers.set('Content-Length', object.size.toString());
+  return new Response(object.body, { status: 200, headers });
 }
 
 // 防盗链 Referer 校验
