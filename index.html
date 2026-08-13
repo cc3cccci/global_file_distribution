@@ -1055,6 +1055,15 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .spin { animation: spin 1s linear infinite; }
 
+    /* Skeleton loading placeholders */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(212,175,55,0.05) 25%, rgba(212,175,55,0.14) 37%, rgba(212,175,55,0.05) 63%);
+      background-size: 400% 100%;
+      animation: skeleton-shimmer 1.3s ease infinite;
+      border-radius: 6px; display: inline-block;
+    }
+    @keyframes skeleton-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
     /* =============================================
        MOBILE RESPONSIVE
        ============================================= */
@@ -1094,6 +1103,14 @@
 
       /* Hide less important table columns on mobile */
       .col-date, .col-status { display: none; }
+
+      /* Touch: row/grid actions can't rely on hover — keep them visible and
+         enlarge tap targets to a finger-friendly size. */
+      .row-actions, .grid-actions, .grid-chk { opacity: 1 !important; }
+      .act-btn { width: 34px; height: 34px; }
+      .act-btn svg { width: 15px; height: 15px; }
+      .col-chk input[type="checkbox"],
+      .file-table input[type="checkbox"] { width: 18px; height: 18px; }
     }
 
     @media (max-width: 500px) {
@@ -1222,7 +1239,7 @@
 
         <div class="topbar-search-wrap">
           <svg class="topbar-search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input class="topbar-search" id="search-input" placeholder="搜索文件名称..." oninput="renderContent()">
+          <input class="topbar-search" id="search-input" placeholder="搜索文件名称..." oninput="onSearchInput()">
         </div>
 
         <div class="topbar-right">
@@ -1565,7 +1582,7 @@
   </div>
 
   <!-- ===== TOAST CONTAINER ===== -->
-  <div class="toast-container" id="toast-container"></div>
+  <div class="toast-container" id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
 
 
   <script>
@@ -1684,6 +1701,7 @@
       renderTagFileList();
       closeContextPanel();
       clearSelection();
+      saveNavState();
       if (window.innerWidth <= 800) closeSidebar();
     }
 
@@ -1704,9 +1722,10 @@
       if (!tbody) return;
 
       if (!files.length) {
+        const searching = q.length > 0;
         tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
-          <div class="empty-title">此标签下暂无文件</div>
-          <div class="empty-desc">在文件列表中点击 🏷️ 为文件添加标签</div>
+          <div class="empty-title">${searching ? '未找到匹配的文件' : '此标签下暂无文件'}</div>
+          <div class="empty-desc">${searching ? '换个关键词试试，或清空搜索框' : '在文件列表中点击 🏷️ 为文件添加标签'}</div>
         </div></td></tr>`;
         return;
       }
@@ -2190,14 +2209,63 @@
     // ============================================================
     async function initDashboard() {
       await Promise.all([loadFiles(), loadSyncList(), loadTagData()]);
-      // Restore view
+      // Restore list/grid preference
       if (currentView !== 'list') setView(currentView);
+      // Restore the nav view / folder path the user was on before reload
+      restoreNavState();
+    }
+
+    // Persist current navigation (view + folder path + active tag) so a page
+    // refresh keeps the user where they were instead of jumping to the root.
+    function saveNavState() {
+      try {
+        sessionStorage.setItem('navState', JSON.stringify({
+          nav: currentNav, path: currentPath, tag: activeTagFilter
+        }));
+      } catch {}
+    }
+
+    function restoreNavState() {
+      let s = null;
+      try { s = JSON.parse(sessionStorage.getItem('navState') || 'null'); } catch {}
+      if (!s) return;
+      if (s.nav === 'tag' && s.tag) {
+        setTagView(encodeURIComponent(s.tag));
+      } else if (s.nav === 'shared' || s.nav === 'sync') {
+        setNavView(s.nav);
+      } else if (s.path) {
+        currentPath = s.path;
+        renderContent();
+      }
     }
 
     // ============================================================
     // LOAD DATA
     // ============================================================
+    // Skeleton placeholders shown during the first data load so the list area
+    // never flashes empty (which reads as "broken").
+    function renderListLoading() {
+      const tbody = document.getElementById('file-list-body');
+      if (tbody) tbody.innerHTML = Array.from({length: 6}).map(() => `
+        <tr>
+          <td class="col-chk"></td>
+          <td><div class="fname-cell"><span class="skeleton" style="width:22px;height:22px"></span><span class="skeleton" style="width:45%;height:12px"></span></div></td>
+          <td class="col-size"><span class="skeleton" style="width:48px;height:10px"></span></td>
+          <td class="col-date"><span class="skeleton" style="width:90px;height:10px"></span></td>
+          <td class="col-status"><span class="skeleton" style="width:44px;height:14px;border-radius:20px"></span></td>
+          <td><span class="skeleton" style="width:60px;height:20px;float:right"></span></td>
+        </tr>`).join('');
+      const grid = document.getElementById('file-grid-body');
+      if (grid) grid.innerHTML = Array.from({length: 8}).map(() => `
+        <div class="grid-card" style="cursor:default">
+          <span class="skeleton" style="width:48px;height:48px;border-radius:8px;margin-bottom:0.55rem"></span>
+          <span class="skeleton" style="width:70%;height:11px"></span>
+          <span class="skeleton" style="width:40%;height:9px;margin-top:0.35rem"></span>
+        </div>`).join('');
+    }
+
     async function loadFiles() {
+      if (!allFiles.length) renderListLoading();
       try {
         const [fr, pr] = await Promise.all([
           fetch('/api/list', { headers: getHeaders() }),
@@ -2266,6 +2334,8 @@
       if (name === 'sync') renderSyncList();
       if (name === 'shared') renderSharedView();
 
+      saveNavState();
+
       // Close sidebar on mobile
       if (window.innerWidth <= 800) closeSidebar();
     }
@@ -2293,6 +2363,13 @@
     // ============================================================
     // RENDER ALL FILES VIEW
     // ============================================================
+    // Debounce keystrokes so large lists are not re-rendered on every keypress.
+    let searchDebounceTimer = null;
+    function onSearchInput() {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => renderContent(), 250);
+    }
+
     function renderContent() {
       if (currentNav === 'tag') {
         renderTagFileList();
@@ -2324,14 +2401,15 @@
       if (!tbody) return;
 
       if (!files.length) {
+        const searching = document.getElementById('search-input').value.trim().length > 0;
         tbody.innerHTML = `<tr><td colspan="6">
           <div class="empty-state">
             <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
               <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
               <polyline points="13 2 13 9 20 9"/>
             </svg>
-            <div class="empty-title">暂无内容</div>
-            <div class="empty-desc">上传文件或新建文件夹</div>
+            <div class="empty-title">${searching ? '未找到匹配的文件' : '暂无内容'}</div>
+            <div class="empty-desc">${searching ? '换个关键词试试，或清空搜索框' : '上传文件或新建文件夹'}</div>
           </div>
         </td></tr>`;
         return;
@@ -2345,9 +2423,10 @@
       if (!container) return;
 
       if (!files.length) {
+        const searching = document.getElementById('search-input').value.trim().length > 0;
         container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-          <div class="empty-title">暂无内容</div>
-          <div class="empty-desc">上传文件或新建文件夹</div>
+          <div class="empty-title">${searching ? '未找到匹配的文件' : '暂无内容'}</div>
+          <div class="empty-desc">${searching ? '换个关键词试试，或清空搜索框' : '上传文件或新建文件夹'}</div>
         </div>`;
         return;
       }
@@ -2580,23 +2659,40 @@
       updateSelectAllState();
     }
 
-    function toggleSelectAll(cb) {
+    // Keys currently visible & selectable in the active view. Respects the
+    // current nav view, virtual folder path and search query, and never
+    // includes folders. This scopes "select all" to what the user actually
+    // sees, avoiding accidentally selecting the entire bucket.
+    function getSelectableKeys() {
       const q = document.getElementById('search-input').value.toLowerCase().trim();
-      const filtered = allFiles.filter(f => f.key.toLowerCase().includes(q));
-      cb.checked ? filtered.forEach(f => selectedFiles.add(f.key)) : filtered.forEach(f => selectedFiles.delete(f.key));
+      let items;
+      if (currentNav === 'tag' && activeTagFilter) {
+        items = getFilesForTag(activeTagFilter).filter(f => f.key.toLowerCase().includes(q));
+      } else if (q) {
+        items = allFiles.filter(f => f.key.toLowerCase().includes(q) && !f.key.endsWith('/'));
+      } else {
+        items = getItemsInCurrentPath(allFiles).filter(it => !it.isFolder);
+      }
+      return items.map(f => f.key);
+    }
+
+    function toggleSelectAll(cb) {
+      const keys = getSelectableKeys();
+      cb.checked ? keys.forEach(k => selectedFiles.add(k)) : keys.forEach(k => selectedFiles.delete(k));
       renderContent();
       updateBatchBar();
     }
 
     function updateSelectAllState() {
-      const cb = document.getElementById('select-all-chk');
-      if (!cb) return;
-      const q = document.getElementById('search-input').value.toLowerCase().trim();
-      const filtered = allFiles.filter(f => f.key.toLowerCase().includes(q));
-      const allSel = filtered.length && filtered.every(f => selectedFiles.has(f.key));
+      const keys = getSelectableKeys();
+      const allSel = keys.length && keys.every(k => selectedFiles.has(k));
       const someSel = selectedFiles.size > 0;
-      cb.checked = allSel;
-      cb.indeterminate = !allSel && someSel;
+      ['select-all-chk','tag-select-all'].forEach(id => {
+        const cb = document.getElementById(id);
+        if (!cb) return;
+        cb.checked = allSel;
+        cb.indeterminate = !allSel && someSel;
+      });
     }
 
     function clearSelection() {
@@ -2646,17 +2742,31 @@
       const keys = [...selectedFiles];
       const allPub = keys.every(k => publicFiles.includes(k));
       const nextState = !allPub;
-      for (const k of keys) {
-        try {
-          const r = await fetch('/api/public-toggle', {
-            method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
-            body: JSON.stringify({ key:k, isPublic:nextState })
-          });
-          if (r.ok) { const d = await r.json(); publicFiles = d.publicFiles||[]; }
-        } catch {}
+      const run = async () => {
+        for (const k of keys) {
+          try {
+            const r = await fetch('/api/public-toggle', {
+              method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
+              body: JSON.stringify({ key:k, isPublic:nextState })
+            });
+            if (r.ok) { const d = await r.json(); publicFiles = d.publicFiles||[]; }
+          } catch {}
+        }
+        showToast(nextState ? `已将 ${keys.length} 个文件设为公开` : `已取消 ${keys.length} 个文件公开状态`, 'success');
+        renderContent(); renderSharedView(); clearSelection();
+      };
+      // Making files public exposes them via anonymous permanent links — confirm first.
+      if (nextState) {
+        openConfirm({
+          title: `将 ${keys.length} 个文件设为公开？`,
+          desc: '这些文件将可通过永久公开直链被任何知道链接的人匿名下载，请确认无隐私风险。',
+          okText: '设为公开',
+          danger: false,
+          onOk: run
+        });
+      } else {
+        await run();
       }
-      showToast(nextState ? `已将 ${keys.length} 个文件设为公开` : `已取消 ${keys.length} 个文件公开状态`, 'success');
-      renderContent(); renderSharedView(); clearSelection();
     }
 
     async function batchDelete() {
@@ -2664,21 +2774,22 @@
       const keys = [...selectedFiles];
       const count = keys.length;
       fileToDelete = keys;
-      document.getElementById('confirm-title').textContent = `确认删除这 ${count} 个文件？`;
-      document.getElementById('confirm-desc').textContent = '选中的文件将从 Cloudflare R2 中永久删除，此操作无法恢复。';
-      document.getElementById('confirm-modal').classList.add('active');
-      document.getElementById('confirm-ok-btn').onclick = async () => {
-        closeConfirmModal();
-        let done = 0;
-        for (const k of keys) {
-          try {
-            const r = await fetch(`/api/delete?key=${ek(k)}`, { method:'DELETE', headers:getHeaders() });
-            if (r.ok) done++;
-          } catch {}
+      openConfirm({
+        title: `确认删除这 ${count} 个文件？`,
+        desc: '选中的文件将从 Cloudflare R2 中永久删除，此操作无法恢复。',
+        okText: '确认删除',
+        onOk: async () => {
+          let done = 0;
+          for (const k of keys) {
+            try {
+              const r = await fetch(`/api/delete?key=${ek(k)}`, { method:'DELETE', headers:getHeaders() });
+              if (r.ok) done++;
+            } catch {}
+          }
+          showToast(`已删除 ${done}/${count} 个文件`, done===count?'success':'error');
+          clearSelection(); await loadFiles(); closeContextPanel();
         }
-        showToast(`已删除 ${done}/${count} 个文件`, done===count?'success':'error');
-        clearSelection(); await loadFiles(); closeContextPanel();
-      };
+      });
     }
 
     // ============================================================
@@ -2860,6 +2971,7 @@
       currentPath = path;
       clearSelection();
       renderContent();
+      saveNavState();
     }
 
     function renderBreadcrumbs() {
@@ -3087,27 +3199,41 @@
     function confirmDelete(keyParam) {
       const k = dk(keyParam);
       fileToDelete = k;
-      if (k.endsWith('/')) {
-        document.getElementById('confirm-title').textContent = `确认删除文件夹「${k}」？`;
-        document.getElementById('confirm-desc').textContent = '此操作将从 Cloudflare R2 存储桶中永久抹除该文件夹及其内部的所有文件，且无法恢复！';
-      } else {
-        document.getElementById('confirm-title').textContent = `确认删除「${k}」？`;
-        document.getElementById('confirm-desc').textContent = '此操作将从 Cloudflare R2 存储桶中永久抹除该文件，无法恢复。';
-      }
-      document.getElementById('confirm-modal').classList.add('active');
-      document.getElementById('confirm-ok-btn').onclick = async () => {
-        closeConfirmModal();
-        try {
-          const r = await fetch(`/api/delete?key=${ek(k)}`, { method:'DELETE', headers:getHeaders() });
-          if (r.ok) { showToast(k.endsWith('/') ? `文件夹「${k}」及其子文件已删除` : `「${k}」已删除`, 'success'); await loadFiles(); closeContextPanel(); clearSelection(); }
-          else showToast('删除失败','error');
-        } catch(e){ showToast('请求异常: '+e.message,'error'); }
-      };
+      const isFolder = k.endsWith('/');
+      openConfirm({
+        title: isFolder ? `确认删除文件夹「${k}」？` : `确认删除「${k}」？`,
+        desc: isFolder
+          ? '此操作将从 Cloudflare R2 存储桶中永久抹除该文件夹及其内部的所有文件，且无法恢复！'
+          : '此操作将从 Cloudflare R2 存储桶中永久抹除该文件，无法恢复。',
+        okText: '确认删除',
+        onOk: async () => {
+          try {
+            const r = await fetch(`/api/delete?key=${ek(k)}`, { method:'DELETE', headers:getHeaders() });
+            if (r.ok) { showToast(isFolder ? `文件夹「${k}」及其子文件已删除` : `「${k}」已删除`, 'success'); await loadFiles(); closeContextPanel(); clearSelection(); }
+            else showToast('删除失败','error');
+          } catch(e){ showToast('请求异常: '+e.message,'error'); }
+        }
+      });
     }
 
     function closeConfirmModal() {
       document.getElementById('confirm-modal').classList.remove('active');
       fileToDelete = null;
+    }
+
+    // Generic confirmation dialog reusing #confirm-modal. Used for any
+    // destructive / high-impact action so the confirm UX stays consistent.
+    function openConfirm({ title, desc, okText = '确认', danger = true, onOk }) {
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-desc').textContent = desc;
+      const okBtn = document.getElementById('confirm-ok-btn');
+      okBtn.textContent = okText;
+      okBtn.className = danger ? 'btn btn-danger' : 'btn';
+      document.getElementById('confirm-modal').classList.add('active');
+      okBtn.onclick = async () => {
+        closeConfirmModal();
+        if (onOk) await onOk();
+      };
     }
 
     // ============================================================
@@ -3262,13 +3388,22 @@
     }
 
     async function deleteSyncItem(i) {
-      const removed = currentSyncList.splice(i, 1);
-      const r = await fetch('/api/sync-config', {
-        method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
-        body: JSON.stringify(currentSyncList)
+      const item = currentSyncList[i];
+      if (!item) return;
+      openConfirm({
+        title: `删除订阅「${item.key}」？`,
+        desc: '将从自动同步列表中移除该订阅项（已同步到 R2 的文件不会被删除）。',
+        okText: '删除订阅',
+        onOk: async () => {
+          const removed = currentSyncList.splice(i, 1);
+          const r = await fetch('/api/sync-config', {
+            method:'POST', headers:{...getHeaders(),'Content-Type':'application/json'},
+            body: JSON.stringify(currentSyncList)
+          });
+          if (r.ok) { renderSyncList(); showToast(`「${removed[0]?.key}」订阅已删除`,'success'); }
+          else { currentSyncList.splice(i, 0, ...removed); showToast('删除失败','error'); }
+        }
       });
-      if (r.ok) { renderSyncList(); showToast(`「${removed[0]?.key}」订阅已删除`,'success'); }
-      else { currentSyncList.splice(i, 0, ...removed); showToast('删除失败','error'); }
     }
 
     async function syncSingleItem(keyParam, i) {
@@ -3511,6 +3646,18 @@
         el.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
       }
     }
+
+    // Global Escape closes the top-most open modal, then the context panel,
+    // then the mobile sidebar — matching common desktop expectations.
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      const openModals = document.querySelectorAll('.modal-overlay.active');
+      if (openModals.length) { openModals.forEach(m => m.classList.remove('active')); fileToDelete = null; return; }
+      const panel = document.getElementById('context-panel');
+      if (panel && panel.classList.contains('open')) { closeContextPanel(); return; }
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar && sidebar.classList.contains('mobile-open')) { closeSidebar(); return; }
+    });
 
     // ============================================================
     // INIT
