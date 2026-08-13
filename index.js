@@ -295,12 +295,21 @@ export default {
 
       // 路由：获取文件列表
       if (pathname === '/api/list' && request.method === 'GET') {
-        const listResult = await env.BUCKET.list();
-        const files = listResult.objects.map(obj => ({
-          key: obj.key,
-          size: obj.size,
-          uploaded: obj.uploaded.toISOString()
-        }));
+        // R2 list() 单次最多返回 1000 个对象，必须用 cursor 循环聚合，
+        // 否则超过 1000 个文件时列表会被静默截断。
+        const files = [];
+        let cursor;
+        do {
+          const listResult = await env.BUCKET.list({ cursor, limit: 1000 });
+          for (const obj of listResult.objects) {
+            files.push({
+              key: obj.key,
+              size: obj.size,
+              uploaded: obj.uploaded.toISOString()
+            });
+          }
+          cursor = listResult.truncated ? listResult.cursor : undefined;
+        } while (cursor);
         return corsResponse(new Response(JSON.stringify({ files }), {
           headers: { 'Content-Type': 'application/json' }
         }));
@@ -408,10 +417,17 @@ export default {
         const key = decodeURIComponent(keyParam);
 
         if (key.endsWith('/')) {
-          const listResult = await env.BUCKET.list({ prefix: key });
-          const keysToDelete = listResult.objects.map(obj => obj.key);
-          if (keysToDelete.length > 0) {
-            await env.BUCKET.delete(keysToDelete);
+          // cursor 循环收集该目录下所有对象，避免超过 1000 个子对象时删不干净
+          const keysToDelete = [];
+          let cursor;
+          do {
+            const listResult = await env.BUCKET.list({ prefix: key, cursor, limit: 1000 });
+            for (const obj of listResult.objects) keysToDelete.push(obj.key);
+            cursor = listResult.truncated ? listResult.cursor : undefined;
+          } while (cursor);
+          // R2 delete 单次最多接受 1000 个 key，分批删除
+          for (let i = 0; i < keysToDelete.length; i += 1000) {
+            await env.BUCKET.delete(keysToDelete.slice(i, i + 1000));
           }
         } else {
           await env.BUCKET.delete(key);
