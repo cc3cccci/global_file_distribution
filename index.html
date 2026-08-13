@@ -560,6 +560,11 @@
       vertical-align: middle; font-size: 0.82rem;
     }
     .file-table tr:last-child td { border-bottom: none; }
+    /* Fixed row height keeps virtual-scroll math exact (main + tag lists only) */
+    #file-list-body td, #tag-file-list-body td { height: 44px; padding-top: 0; padding-bottom: 0; }
+    .file-table th.sortable { cursor: pointer; }
+    .file-table th.sortable:hover { color: var(--text-primary); }
+    .sort-arrow { font-size: 0.7rem; color: var(--accent-gold); margin-left: 3px; }
     .file-row { cursor: pointer; transition: background 0.12s; }
     .file-row:hover td { background: var(--row-hover); }
     .file-row.selected td { background: var(--row-selected); }
@@ -1332,9 +1337,9 @@
                   <th class="col-chk">
                     <input type="checkbox" id="select-all-chk" onchange="toggleSelectAll(this)">
                   </th>
-                  <th>文件名</th>
-                  <th class="col-size">大小</th>
-                  <th class="col-date">修改时间</th>
+                  <th class="sortable" data-sort="name" onclick="setSort('name')">文件名<span class="sort-arrow"></span></th>
+                  <th class="col-size sortable" data-sort="size" onclick="setSort('size')">大小<span class="sort-arrow"></span></th>
+                  <th class="col-date sortable" data-sort="date" onclick="setSort('date')">修改时间<span class="sort-arrow"></span></th>
                   <th class="col-status">状态</th>
                   <th></th>
                 </tr>
@@ -1364,9 +1369,9 @@
               <thead>
                 <tr>
                   <th class="col-chk"><input type="checkbox" id="tag-select-all" onchange="toggleSelectAll(this)"></th>
-                  <th>文件名</th>
-                  <th class="col-size">大小</th>
-                  <th class="col-date">修改时间</th>
+                  <th class="sortable" data-sort="name" onclick="setSort('name')">文件名<span class="sort-arrow"></span></th>
+                  <th class="col-size sortable" data-sort="size" onclick="setSort('size')">大小<span class="sort-arrow"></span></th>
+                  <th class="col-date sortable" data-sort="date" onclick="setSort('date')">修改时间<span class="sort-arrow"></span></th>
                   <th class="col-status">状态</th>
                   <th></th>
                 </tr>
@@ -1759,7 +1764,7 @@
     function renderTagFileList() {
       if (currentNav !== 'tag' || !activeTagFilter) return;
       const q = document.getElementById('search-input').value.toLowerCase().trim();
-      const files = getFilesForTag(activeTagFilter).filter(f => f.key.toLowerCase().includes(q));
+      const files = sortItems(getFilesForTag(activeTagFilter).filter(f => f.key.toLowerCase().includes(q)));
       document.getElementById('file-count-badge').textContent = files.length + ' 个';
 
       const tbody = document.getElementById('tag-file-list-body');
@@ -2414,7 +2419,51 @@
       searchDebounceTimer = setTimeout(() => renderContent(), 250);
     }
 
+    // Sorting state (persisted). Folders always sort before files.
+    let sortState = {
+      field: localStorage.getItem('sortField') || 'name', // name | size | date
+      dir:   localStorage.getItem('sortDir')   || 'asc'    // asc | desc
+    };
+
+    function sortItems(items) {
+      const dir = sortState.dir === 'desc' ? -1 : 1;
+      const cmp = (a, b) => {
+        // folders first, regardless of sort direction
+        const af = a.isFolder ? 0 : 1, bf = b.isFolder ? 0 : 1;
+        if (af !== bf) return af - bf;
+        let r = 0;
+        if (sortState.field === 'size') r = (a.size || 0) - (b.size || 0);
+        else if (sortState.field === 'date') r = new Date(a.uploaded).getTime() - new Date(b.uploaded).getTime();
+        else r = (a.name || a.key).localeCompare(b.name || b.key, 'zh-CN', { numeric: true });
+        return r * dir;
+      };
+      return items.slice().sort(cmp);
+    }
+
+    function setSort(field) {
+      if (sortState.field === field) {
+        sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortState.field = field;
+        sortState.dir = 'asc';
+      }
+      localStorage.setItem('sortField', sortState.field);
+      localStorage.setItem('sortDir', sortState.dir);
+      updateSortIndicators();
+      renderContent();
+    }
+
+    function updateSortIndicators() {
+      document.querySelectorAll('.file-table th[data-sort]').forEach(th => {
+        const arrow = th.querySelector('.sort-arrow');
+        if (!arrow) return;
+        arrow.textContent = th.dataset.sort === sortState.field
+          ? (sortState.dir === 'asc' ? '↑' : '↓') : '';
+      });
+    }
+
     function renderContent() {
+      updateSortIndicators();
       if (currentNav === 'tag') {
         renderTagFileList();
         return;
@@ -2434,17 +2483,27 @@
         displayItems = folderAndFiles;
       }
 
+      displayItems = sortItems(displayItems);
       renderBreadcrumbs();
 
       if (currentView === 'list') renderListView(displayItems);
       else renderGridView(displayItems);
     }
 
+    // Virtual scrolling: lists longer than the threshold render only the rows
+    // in (and near) the viewport, using spacer rows to preserve scroll height.
+    const VIRTUAL_THRESHOLD = 200;
+    const VROW_H = 44;      // must match the fixed row height in CSS
+    const VOVERSCAN = 8;
+    let vlist = { files: [], active: false };
+    let vlistScrollScheduled = false;
+
     function renderListView(files) {
       const tbody = document.getElementById('file-list-body');
       if (!tbody) return;
 
       if (!files.length) {
+        vlist.active = false;
         const searching = document.getElementById('search-input').value.trim().length > 0;
         tbody.innerHTML = `<tr><td colspan="6">
           <div class="empty-state">
@@ -2459,12 +2518,63 @@
         return;
       }
 
-      tbody.innerHTML = files.map(f => buildFileRow(f)).join('');
+      if (files.length <= VIRTUAL_THRESHOLD) {
+        vlist.active = false;
+        tbody.innerHTML = files.map(f => buildFileRow(f)).join('');
+        return;
+      }
+
+      vlist.files = files;
+      vlist.active = true;
+      const container = document.getElementById('content-area');
+      if (container) container.scrollTop = 0; // reset to top on a fresh list render
+      renderVirtualWindow();
     }
+
+    function renderVirtualWindow() {
+      if (!vlist.active) return;
+      const tbody = document.getElementById('file-list-body');
+      const container = document.getElementById('content-area');
+      if (!tbody || !container) return;
+      const files = vlist.files;
+      const n = files.length;
+
+      const cRect = container.getBoundingClientRect();
+      const bRect = tbody.getBoundingClientRect();
+      const bodyContentTop = (bRect.top - cRect.top) + container.scrollTop;
+      const scrollTop = container.scrollTop;
+
+      let start = Math.floor((scrollTop - bodyContentTop) / VROW_H) - VOVERSCAN;
+      start = Math.max(0, Math.min(start, Math.max(0, n - 1)));
+      const visible = Math.ceil(container.clientHeight / VROW_H) + VOVERSCAN * 2;
+      const end = Math.min(n, start + visible);
+
+      const topH = start * VROW_H;
+      const botH = (n - end) * VROW_H;
+      let html = '';
+      if (topH > 0) html += `<tr class="vspacer"><td colspan="6" style="height:${topH}px;padding:0;border:none"></td></tr>`;
+      for (let i = start; i < end; i++) html += buildFileRow(files[i]);
+      if (botH > 0) html += `<tr class="vspacer"><td colspan="6" style="height:${botH}px;padding:0;border:none"></td></tr>`;
+      tbody.innerHTML = html;
+    }
+
+    (function attachVirtualScroll() {
+      const container = document.getElementById('content-area');
+      if (!container) return;
+      container.addEventListener('scroll', () => {
+        if (!vlist.active || vlistScrollScheduled) return;
+        vlistScrollScheduled = true;
+        requestAnimationFrame(() => { vlistScrollScheduled = false; renderVirtualWindow(); });
+      });
+    })();
+
+    let gridState = { files: [], rendered: 0, observer: null };
+    const GRID_CHUNK = 120;
 
     function renderGridView(files) {
       const container = document.getElementById('file-grid-body');
       if (!container) return;
+      if (gridState.observer) { gridState.observer.disconnect(); gridState.observer = null; }
 
       if (!files.length) {
         const searching = document.getElementById('search-input').value.trim().length > 0;
@@ -2475,7 +2585,39 @@
         return;
       }
 
-      container.innerHTML = files.map(f => {
+      gridState.files = files;
+      gridState.rendered = 0;
+      container.innerHTML = '';
+      appendGridChunk();
+    }
+
+    // Render grid cards in chunks; an IntersectionObserver sentinel appends more
+    // as the user scrolls, avoiding rendering thousands of cards at once.
+    function appendGridChunk() {
+      const container = document.getElementById('file-grid-body');
+      if (!container) return;
+      const files = gridState.files;
+      const start = gridState.rendered;
+      const end = Math.min(files.length, start + GRID_CHUNK);
+      const oldS = document.getElementById('grid-sentinel');
+      if (oldS) oldS.remove();
+      let html = '';
+      for (let i = start; i < end; i++) html += buildGridCard(files[i]);
+      container.insertAdjacentHTML('beforeend', html);
+      gridState.rendered = end;
+      if (gridState.observer) gridState.observer.disconnect();
+      if (end < files.length) {
+        container.insertAdjacentHTML('beforeend', '<div id="grid-sentinel" style="grid-column:1/-1;height:1px"></div>');
+        if (!gridState.observer) {
+          gridState.observer = new IntersectionObserver(entries => {
+            if (entries.some(e => e.isIntersecting)) appendGridChunk();
+          }, { root: document.getElementById('content-area'), rootMargin: '600px' });
+        }
+        gridState.observer.observe(document.getElementById('grid-sentinel'));
+      }
+    }
+
+    function buildGridCard(f) {
         const isFolder = f.isFolder || f.key.endsWith('/');
         const name = f.name || f.key;
         const k = ek(f.key);
@@ -2525,7 +2667,6 @@
             </button>
           </div>
         </div>`;
-      }).join('');
     }
 
     // ============================================================
