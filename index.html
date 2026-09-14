@@ -8,66 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script>
-    (function(){
-      var t=localStorage.getItem('theme')||'dark';
-      if(t==='light') document.documentElement.classList.add('theme-light');
-    })();
-  </script>
   <style>
     /* =============================================
-       CSS VARIABLES — DARK THEME (Trump Obsidian Gold)
+       CSS VARIABLES — LIGHT THEME (Trump Marble Gold)
        ============================================= */
     :root {
-      --bg-gradient: radial-gradient(ellipse at 20% 10%, #1a1510 0%, #080604 60%);
-      --panel-bg: rgba(22, 20, 16, 0.65);
-      --panel-border: rgba(212, 175, 55, 0.13);
-      --text-primary: #f0ead8;
-      --text-secondary: #8a7e6e;
-      --accent-gold: #d4af37;
-      --accent-gold-light: #f0d98a;
-      --accent-gold-dark: #a88320;
-      --accent-emerald: #10b981;
-      --accent-rose: #f43f5e;
-      --accent-blue: #60a5fa;
-      --accent-purple: #a78bfa;
-      --accent-orange: #fb923c;
-      --font-outfit: 'Outfit', 'Inter', -apple-system, sans-serif;
-      --font-inter: 'Inter', -apple-system, sans-serif;
-
-      /* Auth */
-      --auth-bg: radial-gradient(ellipse at top, #12100e, #050403);
-      --auth-card-bg: rgba(25, 22, 18, 0.9);
-      --auth-input-bg: rgba(0,0,0,0.35);
-      --auth-input-text: #f0ead8;
-
-      /* Modals */
-      --modal-bg: #141210;
-      --modal-shadow: rgba(0,0,0,0.7);
-      --toast-bg: rgba(20, 18, 14, 0.95);
-
-      /* Layout */
-      --sidebar-width: 218px;
-      --topbar-height: 54px;
-      --context-width: 292px;
-      --sidebar-bg: #0a0806;
-      --sidebar-border: rgba(212, 175, 55, 0.09);
-      --sidebar-active-bg: rgba(212, 175, 55, 0.1);
-      --sidebar-hover-bg: rgba(255, 255, 255, 0.035);
-      --topbar-bg: rgba(8, 6, 4, 0.82);
-      --content-bg: transparent;
-      --row-hover: rgba(212, 175, 55, 0.045);
-      --row-selected: rgba(212, 175, 55, 0.1);
-      --grid-card-bg: rgba(22, 20, 16, 0.55);
-      --btn-border: rgba(255, 255, 255, 0.1);
-      --input-bg: rgba(0, 0, 0, 0.25);
-      --table-head-bg: rgba(0,0,0,0.25);
-    }
-
-    /* =============================================
-       LIGHT THEME (Trump Marble Gold)
-       ============================================= */
-    :root.theme-light {
       --bg-gradient: linear-gradient(145deg, #f8f6f1 0%, #eee9df 100%);
       --panel-bg: rgba(255, 255, 255, 0.75);
       --panel-border: rgba(197, 151, 26, 0.22);
@@ -79,33 +24,50 @@
       --accent-emerald: #059669;
       --accent-rose: #dc2626;
       --accent-blue: #2563eb;
+      --accent-purple: #7c3aed;
+      --accent-orange: #ea580c;
+      --font-outfit: 'Outfit', 'Inter', -apple-system, sans-serif;
+      --font-inter: 'Inter', -apple-system, sans-serif;
 
+      /* Auth */
       --auth-bg: linear-gradient(145deg, #f8f6f1, #eee9df);
       --auth-card-bg: rgba(255,255,255,0.9);
       --auth-input-bg: rgba(0,0,0,0.05);
       --auth-input-text: #221d15;
+
+      /* Modals */
       --modal-bg: #ffffff;
       --modal-shadow: rgba(184, 134, 11, 0.12);
       --toast-bg: rgba(255, 255, 255, 0.96);
 
+      /* Layout */
+      --sidebar-width: 218px;
+      --topbar-height: 54px;
+      --context-width: 292px;
       --sidebar-bg: rgba(236, 231, 222, 0.97);
       --sidebar-border: rgba(184, 134, 11, 0.16);
       --sidebar-active-bg: rgba(184, 134, 11, 0.11);
       --sidebar-hover-bg: rgba(0,0,0,0.04);
       --topbar-bg: rgba(248, 246, 241, 0.9);
+      --content-bg: transparent;
       --row-hover: rgba(184, 134, 11, 0.05);
       --row-selected: rgba(184, 134, 11, 0.11);
       --grid-card-bg: rgba(255,255,255,0.6);
       --btn-border: rgba(0,0,0,0.11);
       --input-bg: rgba(0,0,0,0.05);
       --table-head-bg: rgba(0,0,0,0.04);
+
+      /* Preview */
+      --preview-overlay-bg: rgba(34, 29, 21, 0.28);
+      --preview-code-bg: #ffffff;
+      --preview-nav-bg: rgba(255, 255, 255, 0.92);
     }
 
     /* =============================================
        RESET & BASE
        ============================================= */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; overflow: hidden; }
+    html, body { height: 100%; overflow: hidden; color-scheme: light; }
     body {
       background: var(--bg-gradient);
       color: var(--text-primary);
@@ -432,11 +394,6 @@
     }
     .icon-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
     .icon-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
-
-    #theme-toggle-btn {
-      width: 29px; padding: 0; border-radius: 50%;
-      justify-content: center;
-    }
 
     /* =============================================
        CONTENT AREA
@@ -1174,7 +1131,7 @@
        ============================================= */
     .preview-overlay {
       position: fixed; inset: 0; z-index: 180;
-      background: rgba(4, 3, 2, 0.88);
+      background: var(--preview-overlay-bg);
       backdrop-filter: blur(10px);
       display: none; flex-direction: column;
     }
@@ -1197,7 +1154,7 @@
     .preview-stage iframe { width: 100%; height: 100%; border: none; background: #fff; border-radius: 8px; }
     .preview-code {
       width: min(960px, 100%); max-height: 100%; overflow: auto;
-      background: rgba(0,0,0,0.45); border: 1px solid var(--panel-border);
+      background: var(--preview-code-bg); border: 1px solid var(--panel-border);
       border-radius: 10px; padding: 1rem 1.1rem; font-size: 0.8rem;
       line-height: 1.55; white-space: pre-wrap; word-break: break-word;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1206,7 +1163,7 @@
     .preview-nav {
       position: absolute; top: 50%; transform: translateY(-50%);
       width: 40px; height: 40px; border-radius: 50%;
-      background: rgba(20,18,14,0.7); border: 1px solid var(--panel-border);
+      background: var(--preview-nav-bg); border: 1px solid var(--panel-border);
       color: var(--text-primary); display: flex; align-items: center; justify-content: center;
     }
     .preview-nav:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
@@ -1530,10 +1487,6 @@
           </button>
           <button class="view-btn" id="view-grid-btn" onclick="setView('grid')" title="宫格视图">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          </button>
-
-          <button class="icon-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="切换明暗主题">
-            <svg id="theme-icon" viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"></svg>
           </button>
 
           <button class="icon-btn" onclick="logout()">
@@ -2497,9 +2450,76 @@
       return ['image','video','audio','pdf','code','text'].includes(getFileType(name));
     }
 
-    function authFileUrl(key, inline) {
-      const token = localStorage.getItem('auth_token') || '';
-      return `/api/download?key=${ek(key)}&token=${encodeURIComponent(token)}${inline ? '&inline=1' : ''}`;
+    const SESSION_TOKEN_RE = /^\d+\.[0-9a-f]+\.[0-9a-f]{32,}$/i;
+    const signedUrlCache = new Map();
+
+    function isSessionToken(t) {
+      return SESSION_TOKEN_RE.test(t || '');
+    }
+
+    function getStoredSession() {
+      const t = localStorage.getItem('auth_token');
+      if (!isSessionToken(t)) {
+        if (t) localStorage.removeItem('auth_token');
+        return '';
+      }
+      return t;
+    }
+
+    function signedCacheKey(key, inline) {
+      return (inline ? 'i:' : 'd:') + key;
+    }
+
+    async function signFileUrls(keys, inline, ttl = 600) {
+      const unique = [...new Set((keys || []).filter(k => k && !String(k).endsWith('/')))];
+      const result = {};
+      const need = [];
+      const now = Date.now();
+      for (const key of unique) {
+        const hit = signedUrlCache.get(signedCacheKey(key, inline));
+        if (hit && hit.expires > now + 15000) result[key] = hit.url;
+        else need.push(key);
+      }
+      const chunkSize = 80;
+      for (let i = 0; i < need.length; i += chunkSize) {
+        const batch = need.slice(i, i + chunkSize);
+        const r = await fetch('/api/sign-urls', {
+          method: 'POST',
+          headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keys: batch, ttl, inline: !!inline })
+        });
+        if (r.status === 401) { logout(); throw new Error('Unauthorized'); }
+        if (!r.ok) throw new Error('Failed to sign file URLs');
+        const d = await r.json();
+        for (const [key, info] of Object.entries(d.urls || {})) {
+          if (!info || !info.url) continue;
+          signedUrlCache.set(signedCacheKey(key, inline), { url: info.url, expires: info.expires });
+          result[key] = info.url;
+        }
+      }
+      return result;
+    }
+
+    async function getSignedFileUrl(key, inline, ttl = 600) {
+      const map = await signFileUrls([key], inline, ttl);
+      return map[key] || '';
+    }
+
+    async function hydrateGridThumbs() {
+      const imgs = [...document.querySelectorAll('.grid-thumb[data-preview-key]:not([data-signing])')];
+      if (!imgs.length) return;
+      const keys = imgs.map(img => img.getAttribute('data-preview-key'));
+      imgs.forEach(img => img.setAttribute('data-signing', '1'));
+      try {
+        const urls = await signFileUrls(keys, true);
+        for (const img of imgs) {
+          const key = img.getAttribute('data-preview-key');
+          if (urls[key]) img.src = urls[key];
+          img.removeAttribute('data-signing');
+        }
+      } catch (e) {
+        imgs.forEach(img => img.removeAttribute('data-signing'));
+      }
     }
 
     function copyText(text, toastMsg) {
@@ -2594,10 +2614,13 @@
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ password: pw })
         });
-        if (r.ok) {
-          localStorage.setItem('auth_token', pw);
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && isSessionToken(d.token)) {
+          localStorage.setItem('auth_token', d.token);
           document.getElementById('auth-overlay').classList.add('hidden');
           await initDashboard();
+        } else if (r.ok) {
+          showToast('登录响应无效，请重试', 'error');
         } else {
           showToast('密码错误，请重试', 'error');
           document.getElementById('auth-password').value='';
@@ -2606,7 +2629,7 @@
     }
 
     async function checkAuth() {
-      const token = localStorage.getItem('auth_token');
+      const token = getStoredSession();
       if (!token) return;
       try {
         const r = await fetch('/api/list', { headers: getHeaders() });
@@ -2624,7 +2647,7 @@
     }
 
     function getHeaders() {
-      return { 'Authorization': localStorage.getItem('auth_token') || '' };
+      return { 'Authorization': getStoredSession() };
     }
 
     // ============================================================
@@ -2986,6 +3009,7 @@
       for (let i = start; i < end; i++) html += buildGridCard(files[i]);
       container.insertAdjacentHTML('beforeend', html);
       gridState.rendered = end;
+      hydrateGridThumbs();
       if (gridState.observer) gridState.observer.disconnect();
       if (end < files.length) {
         container.insertAdjacentHTML('beforeend', '<div id="grid-sentinel" style="grid-column:1/-1;height:1px"></div>');
@@ -3026,7 +3050,7 @@
           </span>`;
         }).join('');
         const thumb = getFileType(f.key) === 'image' && f.size < 8 * 1024 * 1024
-          ? `<img class="grid-thumb" src="${authFileUrl(f.key, true)}" alt="" loading="lazy">`
+          ? `<img class="grid-thumb" data-preview-key="${escapeHtml(f.key)}" alt="" loading="lazy">`
           : `<div class="grid-icon">${getFileIcon(f.key, 48)}</div>`;
 
         return `<div class="grid-card ${sel?'selected':''}" onclick="handleGridClick(event,'${k}')" ondblclick="openPreview('${k}')" oncontextmenu="showContextMenu(event,'${k}')">
@@ -3857,13 +3881,19 @@
     document.addEventListener('click', closeAllQuickTagPickers);
     document.addEventListener('scroll', closeAllQuickTagPickers, true);
 
-    function downloadFile(keyParam) {
+    async function downloadFile(keyParam) {
       const k = dk(keyParam);
       if (k.endsWith('/')) return; // Can't download directory directly
-      const a = document.createElement('a');
-      a.href     = `/api/download?key=${keyParam}&token=${localStorage.getItem('auth_token')}`;
-      a.download = k;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      try {
+        const href = await getSignedFileUrl(k, false);
+        if (!href) { showToast('无法生成下载链接', 'error'); return; }
+        const a = document.createElement('a');
+        a.href = href;
+        a.download = k.split('/').pop() || k;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      } catch (e) {
+        showToast('下载失败: ' + e.message, 'error');
+      }
     }
 
     // ============================================================
@@ -4250,9 +4280,6 @@
             const filename = hParts[hParts.length - 1];
             const displayTime = formatDate(item.uploaded);
             
-            const token = localStorage.getItem('auth_token') || '';
-            const downloadUrl = `/api/download?key=${encodeURIComponent(item.key)}&token=${encodeURIComponent(token)}`;
-            
             return `
               <div style="display:flex; align-items:center; justify-content:space-between; padding:0.35rem 0.5rem; background:rgba(255,255,255,0.03); border:1px solid var(--panel-border); border-radius:6px; font-size:0.75rem; gap:0.5rem;">
                 <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:0.1rem;">
@@ -4264,7 +4291,7 @@
                   </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:0.3rem; flex-shrink:0;">
-                  <a href="${downloadUrl}" target="_blank" class="btn btn-secondary" style="font-size:0.68rem; padding:0.25rem 0.45rem; height:auto; text-decoration:none; display:inline-flex; align-items:center; line-height:1;">下载</a>
+                  <button type="button" class="btn btn-secondary" style="font-size:0.68rem; padding:0.25rem 0.45rem; height:auto; line-height:1;" onclick="downloadFile('${encodeURIComponent(item.key)}')">下载</button>
                   <button class="btn ${item.pinned ? 'btn-secondary' : ''}" onclick="toggleHistoryPin('${encodeURIComponent(item.key)}', ${!item.pinned}, '${encodedKey}', ${index})" style="font-size:0.68rem; padding:0.25rem 0.45rem; height:auto; line-height:1; color:${item.pinned ? 'var(--accent-gold)' : 'var(--text-secondary)'}; border-color:${item.pinned ? 'var(--accent-gold)50' : ''};">
                     ${item.pinned ? '解固 🔓' : '固定 📌'}
                   </button>
@@ -4487,7 +4514,6 @@
       const key = previewList[previewIndex];
       if (!key) return;
       const type = getFileType(key);
-      const url = authFileUrl(key, true);
       document.getElementById('preview-title').textContent = key;
       document.getElementById('preview-download-btn').onclick = () => downloadFile(ek(key));
       const stage = document.getElementById('preview-stage');
@@ -4498,6 +4524,17 @@
         <button class="preview-nav next" onclick="previewStep(1)" title="下一张">
           <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         </button>`;
+      let url = '';
+      try {
+        url = await getSignedFileUrl(key, true);
+      } catch (e) {
+        stage.innerHTML = `${navHtml}<div class="preview-code">无法生成预览链接：${escapeHtml(e.message)}</div>`;
+        return;
+      }
+      if (!url) {
+        stage.innerHTML = `${navHtml}<div class="preview-code">无法生成预览链接</div>`;
+        return;
+      }
 
       if (type === 'image') {
         stage.innerHTML = `${navHtml}<img src="${url}" alt="${escapeHtml(key)}">`;
@@ -4558,7 +4595,9 @@
       const readme = allFiles.find(f => f.key.toLowerCase() === (currentPath + 'readme.md').toLowerCase());
       if (!readme) { panel.style.display = 'none'; return; }
       try {
-        const r = await fetch(authFileUrl(readme.key, true));
+        const readmeUrl = await getSignedFileUrl(readme.key, true);
+        if (!readmeUrl) { panel.style.display = 'none'; return; }
+        const r = await fetch(readmeUrl);
         if (!r.ok) { panel.style.display = 'none'; return; }
         const text = await r.text();
         body.innerHTML = renderMarkdown(text.slice(0, 20000));
@@ -4615,7 +4654,6 @@
         { id: 'shared', label: '转到公开分享', hint: '', run: () => setNavView('shared') },
         { id: 'sync', label: '转到 GitHub 订阅', hint: '', run: () => setNavView('sync') },
         { id: 'certs', label: '转到 SSL 证书', hint: '', run: () => setNavView('certs') },
-        { id: 'theme', label: '切换明暗主题', hint: '', run: () => toggleTheme() },
         { id: 'keys', label: '查看快捷键', hint: '?', run: () => openShortcutsModal() },
       ];
       const q = (document.getElementById('cmdk-input')?.value || '').toLowerCase().trim();
@@ -4729,33 +4767,6 @@
     });
 
     // ============================================================
-    // THEME
-    // ============================================================
-    function initTheme() {
-      const t = localStorage.getItem('theme')||'dark';
-      t==='light' ? document.documentElement.classList.add('theme-light') : document.documentElement.classList.remove('theme-light');
-      updateThemeIcon(t);
-    }
-
-    function toggleTheme() {
-      const isLight = document.documentElement.classList.toggle('theme-light');
-      const t = isLight ? 'light' : 'dark';
-      localStorage.setItem('theme', t);
-      updateThemeIcon(t);
-      showToast(`已切换为${t==='light'?'明亮':'暗黑'}主题`, 'info');
-    }
-
-    function updateThemeIcon(t) {
-      const el = document.getElementById('theme-icon');
-      if (!el) return;
-      if (t==='light') {
-        el.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
-      } else {
-        el.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
-      }
-    }
-
-    // ============================================================
     // RIGHT-CLICK CONTEXT MENU
     // ============================================================
     let ctxMenuKey = null;
@@ -4837,7 +4848,6 @@
     // ============================================================
     // INIT
     // ============================================================
-    initTheme();
     window.addEventListener('load', checkAuth);
   </script>
 </body>
