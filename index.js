@@ -35,11 +35,16 @@ export default {
         });
       }
 
-      // 路由：访问密码验证
+      // 路由：访问密码验证（成功后签发 HMAC 会话，密码不回写）
       if (pathname === '/api/auth' && request.method === 'POST') {
         const body = await request.json();
         if (body.password === env.AUTH_PASSWORD) {
-          return corsResponse(new Response(JSON.stringify({ success: true }), {
+          const issued = await issueSessionToken(env);
+          return corsResponse(new Response(JSON.stringify({
+            success: true,
+            token: issued.token,
+            expires: issued.expires
+          }), {
             headers: { 'Content-Type': 'application/json' }
           }));
         }
@@ -59,23 +64,15 @@ export default {
         }
         const key = decodeURIComponent(keyParam);
 
-        // 验证下载凭证（支持两种方式：1. 带有有效 signature 的预签名链接；2. 拥有管理员 token）
+        // 验证下载凭证：HMAC 预签名链接，或 Authorization 会话/管理员密码（禁止查询串带密码）
         const signature = url.searchParams.get('signature');
         const expires = url.searchParams.get('expires');
-        const token = url.searchParams.get('token');
 
         let isAuthorized = false;
-
         if (signature && expires) {
-          const isValidSig = await verifySignature(key, expires, signature, env.SECRET_KEY || 'default-salt');
-          if (isValidSig) {
-            isAuthorized = true;
-          }
-        } else if (token && token === env.AUTH_PASSWORD) {
+          isAuthorized = await verifySignature(key, expires, signature, env.SECRET_KEY || 'default-salt');
+        } else if (await verifyAdminAuth(request, env)) {
           isAuthorized = true;
-          if (!checkReferer(request, env)) {
-            return corsResponse(new Response('Forbidden: Hotlinking is not allowed', { status: 403 }));
-          }
         }
 
         if (!isAuthorized) {
@@ -223,7 +220,7 @@ export default {
       }
 
       // 除下载接口外，其他 API 都必须使用 Authorization 头校验登录状态
-      if (!verifyAdminAuth(request, env)) {
+      if (!(await verifyAdminAuth(request, env))) {
         return corsResponse(new Response(JSON.stringify({ error: 'Unauthorized' }), {
           status: 401,
           headers: { 'Content-Type': 'application/json' }
@@ -304,20 +301,44 @@ export default {
           return corsResponse(new Response('Missing file key', { status: 400 }));
         }
         const key = decodeURIComponent(keyParam);
-        const ALLOWED_TTL = [600, 3600, 21600, 86400, 604800];
-        let ttl = parseInt(url.searchParams.get('ttl') || '600', 10);
-        if (!ALLOWED_TTL.includes(ttl)) ttl = 600;
+        const ttl = normalizeShareTtl(url.searchParams.get('ttl'));
+        const inline = url.searchParams.get('inline') === '1';
+        const signed = await buildSignedDownloadUrl(url.origin, key, ttl, inline, env);
 
-        const expires = Date.now() + ttl * 1000;
-        const signature = await generateSignature(key, expires, env.SECRET_KEY || 'default-salt');
-        const shareUrl = `${url.origin}/api/download?key=${encodeURIComponent(key)}&expires=${expires}&signature=${signature}`;
+        return corsResponse(new Response(JSON.stringify(signed), {
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
 
-        return corsResponse(new Response(JSON.stringify({
-          url: shareUrl,
-          expires,
-          ttl,
-          expiresAt: new Date(expires).toISOString()
-        }), {
+      // 路由：批量签发短期下载/预览 URL（面板内缩略图、预览用）
+      if (pathname === '/api/sign-urls' && request.method === 'POST') {
+        let body;
+        try {
+          body = await request.json();
+        } catch (e) {
+          return corsResponse(new Response('Invalid JSON body', { status: 400 }));
+        }
+        const keys = Array.isArray(body.keys) ? body.keys : [];
+        if (!keys.length) {
+          return corsResponse(new Response(JSON.stringify({ error: 'Missing keys' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+        if (keys.length > SIGN_URLS_MAX_KEYS) {
+          return corsResponse(new Response(JSON.stringify({ error: `Too many keys (max ${SIGN_URLS_MAX_KEYS})` }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+        const ttl = normalizeShareTtl(body.ttl);
+        const inline = !!body.inline;
+        const urls = {};
+        for (const raw of keys) {
+          if (typeof raw !== 'string' || !raw || raw.endsWith('/')) continue;
+          urls[raw] = await buildSignedDownloadUrl(url.origin, raw, ttl, inline, env);
+        }
+        return corsResponse(new Response(JSON.stringify({ urls }), {
           headers: { 'Content-Type': 'application/json' }
         }));
       }
@@ -755,10 +776,61 @@ async function saveTagDefs(env, defs) {
   });
 }
 
-// 后端鉴权校验
-function verifyAdminAuth(request, env) {
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+const ALLOWED_SHARE_TTL = [600, 3600, 21600, 86400, 604800];
+const SIGN_URLS_MAX_KEYS = 80;
+
+function normalizeShareTtl(ttl) {
+  const n = parseInt(ttl, 10);
+  return ALLOWED_SHARE_TTL.includes(n) ? n : 600;
+}
+
+function hmacSecret(env) {
+  return env.SECRET_KEY || 'default-salt';
+}
+
+async function issueSessionToken(env) {
+  const expires = Date.now() + SESSION_TTL_MS;
+  const jtiBytes = new Uint8Array(16);
+  crypto.getRandomValues(jtiBytes);
+  const jti = Array.from(jtiBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  const signature = await generateSignature(`session:${jti}`, expires, hmacSecret(env));
+  return { token: `${expires}.${jti}.${signature}`, expires };
+}
+
+function parseSessionToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const [expires, jti, signature] = parts;
+  if (!/^\d+$/.test(expires) || !/^[0-9a-f]+$/i.test(jti) || !/^[0-9a-f]+$/i.test(signature)) return null;
+  return { expires, jti, signature };
+}
+
+async function verifySessionToken(token, env) {
+  const parsed = parseSessionToken(token);
+  if (!parsed) return false;
+  return verifySignature(`session:${parsed.jti}`, parsed.expires, parsed.signature, hmacSecret(env));
+}
+
+async function verifyAdminAuth(request, env) {
   const authHeader = request.headers.get('Authorization');
-  return authHeader === env.AUTH_PASSWORD;
+  if (!authHeader) return false;
+  if (authHeader === env.AUTH_PASSWORD) return true;
+  return verifySessionToken(authHeader, env);
+}
+
+async function buildSignedDownloadUrl(origin, key, ttl, inline, env) {
+  const expires = Date.now() + ttl * 1000;
+  const signature = await generateSignature(key, expires, hmacSecret(env));
+  let downloadUrl = `${origin}/api/download?key=${encodeURIComponent(key)}&expires=${expires}&signature=${signature}`;
+  if (inline) downloadUrl += '&inline=1';
+  return {
+    url: downloadUrl,
+    expires,
+    ttl,
+    expiresAt: new Date(expires).toISOString()
+  };
 }
 
 // 跨域响应包装
